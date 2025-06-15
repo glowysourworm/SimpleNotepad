@@ -3,19 +3,54 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:SimpleNotepad"
         xmlns:simpleUI="clr-namespace:SimpleWpf.UI.Controls;assembly=SimpleWpf.UI"
-        xmlns:localView="clr-namespace:SimpleNotepad.View"        
+        xmlns:localView="clr-namespace:SimpleNotepad.View"
+        xmlns:dock="https://github.com/Dirkster99/AvalonDock"
+        xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:fa5="http://schemas.fontawesome.com/icons/"
+        xmlns:system="clr-namespace:System;assembly=System"
+        xmlns:viewModel="clr-namespace:SimpleNotepad.ViewModel"
         Title="Simple Notepad" Height="700" Width="1200">
     <Grid>
-        <TabControl>
-            <TabItem Header="Class Code" IsSelected="True">
-                <localView:CSharpView />
-            </TabItem>
-            <TabItem Header="C++ Class Builder">
-                <localView:CPlusPlusView DataContext="{Binding CPlusPlus}" />
-            </TabItem>
-            <TabItem Header="Code Editor">
-                <localView:CodeEditor />
-            </TabItem>
-        </TabControl>
+        <dock:DockingManager x:Name="DockingManager"
+                             DocumentsSource="{Binding Documents}"
+                             AllowMixedOrientation="True">
+            <dock:DockingManager.Theme>
+                <dock:Vs2013LightTheme />
+            </dock:DockingManager.Theme>
+
+            <!-- Document "Tab" Style --> 
+            <dock:DockingManager.LayoutItemContainerStyle>
+                <Style TargetType="{x:Type dock:LayoutItem}">
+                    
+                    <!-- NOT OBVIOUS!!! (Model is an internal property - which contains our ViewModel) -->
+                    <Setter Property="Title" Value="{Binding Model.Title}" />
+                </Style>
+            </dock:DockingManager.LayoutItemContainerStyle>
+
+            <dock:LayoutRoot x:Name="_layoutRoot">
+
+                <!-- RHS Popout -->
+                <dock:LayoutRoot.RightSide>
+                    <dock:LayoutAnchorSide>
+                        <dock:LayoutAnchorGroup>
+
+                            <!-- RHS (Templates) -->
+                            <dock:LayoutAnchorable ContentId="SyntaxTemplates" Title="Syntax Templates">
+
+
+                            </dock:LayoutAnchorable>
+
+                            <!-- RHS Macros -->
+                            <dock:LayoutAnchorable ContentId="Macros" Title="Macros" >
+
+
+                            </dock:LayoutAnchorable>
+                            
+                        </dock:LayoutAnchorGroup>
+                    </dock:LayoutAnchorSide>
+                </dock:LayoutRoot.RightSide>
+                
+            </dock:LayoutRoot>
+        </dock:DockingManager>
     </Grid>
 </Window>
