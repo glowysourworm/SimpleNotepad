@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="Dirkster.HL" Version="1.0.4" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="SimpleWpf" Version="0.0.1" />
     <PackageReference Include="SimpleWpf.IocFramework" Version="0.0.1" />

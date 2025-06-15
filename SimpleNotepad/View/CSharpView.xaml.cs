@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Controls;
 
+using ICSharpCode.AvalonEdit;
+
 namespace SimpleNotepad.View
 {
     public partial class CSharpView : UserControl
@@ -9,6 +11,11 @@ namespace SimpleNotepad.View
         public CSharpView()
         {
             InitializeComponent();
+
+            var definition = HL.Manager.ThemedHighlightingManager.Instance.GetDefinition("C#");
+
+            this.InputTB.SyntaxHighlighting = definition;
+            this.OutputTB.SyntaxHighlighting = definition;
 
             //foreach (var rule in CSharpRuleSet.GetRules())
             //{
@@ -18,7 +25,7 @@ namespace SimpleNotepad.View
         }
         private void GoButton_Click(object sender, RoutedEventArgs e)
         {
-            var inputText = this.InputTB.TextSource;
+            var inputText = this.InputTB.Text;
             var outputText = "";
 
             if (TryParse(inputText, out outputText))

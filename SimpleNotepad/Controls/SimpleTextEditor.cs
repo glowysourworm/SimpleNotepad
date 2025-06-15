@@ -167,6 +167,7 @@ namespace SimpleNotepad.Controls
             Brush background = this.Background;
             Brush border = this.BorderBrush;
             Brush caret = this.CaretBrush;
+            Brush foreground = this.Foreground;
 
             // Limited Focus Visual Style
             if (this.IsFocused || this.IsKeyboardFocused)
