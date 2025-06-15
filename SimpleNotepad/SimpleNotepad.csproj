@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="SimpleWpf" Version="0.0.1" />
     <PackageReference Include="SimpleWpf.IocFramework" Version="0.0.1" />
     <PackageReference Include="SimpleWpf.UI" Version="0.0.1" />

@@ -7,13 +7,13 @@
         Title="Simple Notepad" Height="700" Width="1200">
     <Grid>
         <TabControl>
-            <TabItem Header="Class Code">
+            <TabItem Header="Class Code" IsSelected="True">
                 <localView:CSharpView />
             </TabItem>
             <TabItem Header="C++ Class Builder">
                 <localView:CPlusPlusView DataContext="{Binding CPlusPlus}" />
             </TabItem>
-            <TabItem Header="Code Editor" IsSelected="True">
+            <TabItem Header="Code Editor">
                 <localView:CodeEditor />
             </TabItem>
         </TabControl>

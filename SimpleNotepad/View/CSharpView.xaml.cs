@@ -18,7 +18,7 @@ namespace SimpleNotepad.View
         }
         private void GoButton_Click(object sender, RoutedEventArgs e)
         {
-            var inputText = this.InputTB.Text;
+            var inputText = this.InputTB.TextSource;
             var outputText = "";
 
             if (TryParse(inputText, out outputText))
