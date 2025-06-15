@@ -1,24 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using SimpleWpf.Extensions;
+﻿using SimpleWpf.Extensions;
+using SimpleWpf.Extensions.Command;
 
 namespace SimpleNotepad.ViewModel
 {
-    public class DocumentViewModel : ViewModelBase
+    public class DocumentViewModel : DockingManagerItemViewModel
     {
-        string _title;
         string _fileName;
         string _contents;
+        bool _isDirty;
+        SimpleCommand _closeCommand;
 
-        public string Title
-        {
-            get { return _title; }
-            set { this.RaiseAndSetIfChanged(ref _title, value); }
-        }
         public string FileName
         {
             get { return _fileName; }
@@ -29,12 +20,27 @@ namespace SimpleNotepad.ViewModel
             get { return _contents; }
             set { this.RaiseAndSetIfChanged(ref _contents, value); }
         }
-
-        public DocumentViewModel()
+        public bool IsDirty
         {
-            this.Title = string.Empty;
+            get { return _isDirty; }
+            set { this.RaiseAndSetIfChanged(ref _isDirty, value); }
+        }
+        public SimpleCommand CloseCommand
+        {
+            get { return _closeCommand; }
+            set { this.RaiseAndSetIfChanged(ref _closeCommand, value); }
+        }
+
+
+        public DocumentViewModel(string fileName, bool isNew) : base(isNew ? "New File" : fileName)
+        {
             this.FileName = string.Empty;
             this.Contents = string.Empty;
+            this.IsDirty = true;
+            this.CloseCommand = new SimpleCommand(() =>
+            {
+
+            });
         }
     }
 }

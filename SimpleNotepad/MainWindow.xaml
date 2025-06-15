@@ -9,40 +9,91 @@
         xmlns:fa5="http://schemas.fontawesome.com/icons/"
         xmlns:system="clr-namespace:System;assembly=System"
         xmlns:viewModel="clr-namespace:SimpleNotepad.ViewModel"
+        xmlns:selector="clr-namespace:SimpleNotepad.View.DataTemplateSelectors"
+        xmlns:view="clr-namespace:SimpleNotepad.View"
         Title="Simple Notepad" Height="700" Width="1200">
     <Grid>
-        <dock:DockingManager x:Name="DockingManager"
-                             DocumentsSource="{Binding Documents}"
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Menu>
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" Command="{Binding OpenCommand}" />
+                <MenuItem Header="_Save" Command="{Binding SaveCommand}" />
+                <MenuItem Header="Save _As" Command="{Binding SaveAsCommand}" />
+                <Separator />
+                <MenuItem Header="_Close" Command="{Binding CloseCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <ToolBar Grid.Row="1">
+            <ToolBarPanel Orientation="Horizontal">
+                <Button fa5:Awesome.Content="Regular_Circle" />
+                <Button fa5:Awesome.Content="Solid_Stop" />
+                <Button fa5:Awesome.Content="Solid_Play" />
+                <Button fa5:Awesome.Content="Solid_FastForward" />
+            </ToolBarPanel>
+            <ToolBarPanel Orientation="Horizontal">
+                <Button fa5:Awesome.Content="Regular_Circle" />
+                <Button fa5:Awesome.Content="Solid_Stop" />
+                <Button fa5:Awesome.Content="Solid_Play" />
+                <Button fa5:Awesome.Content="Solid_FastForward" />
+            </ToolBarPanel>            
+        </ToolBar>
+        
+        <dock:DockingManager x:Name="DockingManager" Grid.Row="2"
+                             DocumentsSource="{Binding DockingManagerItemsSource}"
                              AllowMixedOrientation="True">
             <dock:DockingManager.Theme>
                 <dock:Vs2013LightTheme />
             </dock:DockingManager.Theme>
+
+            <dock:DockingManager.LayoutItemTemplateSelector>
+                <selector:MainDockerDataTemplateSelector>
+                    <selector:MainDockerDataTemplateSelector.DocumentTemplateDefault>
+
+                        <!-- Default = Document template -->
+                        <DataTemplate>
+                            <view:DocumentView Source="{Binding Model.Contents}" />
+                        </DataTemplate>
+
+                    </selector:MainDockerDataTemplateSelector.DocumentTemplateDefault>
+                    <selector:MainDockerDataTemplateSelector.SyntaxTemplatesMain>
+                        
+                        <!-- SyntaxTemplates = Syntax Template Main View -->
+                        <DataTemplate>
+                            <view:SyntaxTemplateMainView DataContext="{Binding SyntaxTemplateMain}" />
+                        </DataTemplate>
+                        
+                    </selector:MainDockerDataTemplateSelector.SyntaxTemplatesMain>
+                </selector:MainDockerDataTemplateSelector>
+            </dock:DockingManager.LayoutItemTemplateSelector>
 
             <!-- Document "Tab" Style --> 
             <dock:DockingManager.LayoutItemContainerStyle>
                 <Style TargetType="{x:Type dock:LayoutItem}">
                     
                     <!-- NOT OBVIOUS!!! (Model is an internal property - which contains our ViewModel) -->
-                    <Setter Property="Title" Value="{Binding Model.Title}" />
+                    <Setter Property="Title" Value="{Binding Model.Header}" />
+                    <Setter Property="ToolTip" Value="{Binding Model.FileName}" />
                 </Style>
             </dock:DockingManager.LayoutItemContainerStyle>
 
-            <dock:LayoutRoot x:Name="_layoutRoot">
+            <!--dock:LayoutRoot x:Name="_layoutRoot">
 
-                <!-- RHS Popout -->
                 <dock:LayoutRoot.RightSide>
                     <dock:LayoutAnchorSide>
                         <dock:LayoutAnchorGroup>
 
-                            <!-- RHS (Templates) -->
                             <dock:LayoutAnchorable ContentId="SyntaxTemplates" Title="Syntax Templates">
-
-
+                                
                             </dock:LayoutAnchorable>
 
-                            <!-- RHS Macros -->
                             <dock:LayoutAnchorable ContentId="Macros" Title="Macros" >
-
 
                             </dock:LayoutAnchorable>
                             
@@ -50,7 +101,7 @@
                     </dock:LayoutAnchorSide>
                 </dock:LayoutRoot.RightSide>
                 
-            </dock:LayoutRoot>
+            </dock:LayoutRoot-->
         </dock:DockingManager>
     </Grid>
 </Window>

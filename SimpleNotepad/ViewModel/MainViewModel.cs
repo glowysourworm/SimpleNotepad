@@ -8,30 +8,48 @@ namespace SimpleNotepad.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
-        CPlusPlusViewModel _cplusPlus;
+        ObservableCollection<DockingManagerItemViewModel> _dockingManagerItemsSource;
 
-        ObservableCollection<DocumentViewModel> _documents;
+        public ObservableCollection<DockingManagerItemViewModel> DockingManagerItemsSource
+        {
+            get { return _dockingManagerItemsSource; }
+            set { this.RaiseAndSetIfChanged(ref _dockingManagerItemsSource, value); }
+        }
 
-        public CPlusPlusViewModel CPlusPlus
-        {
-            get { return _cplusPlus; }
-            set { this.RaiseAndSetIfChanged(ref _cplusPlus, value); }
-        }
-        public ObservableCollection<DocumentViewModel> Documents
-        {
-            get { return _documents; }
-            set { this.RaiseAndSetIfChanged(ref _documents, value); }
-        }
+
 
         public MainViewModel()
         {
-            this.CPlusPlus = new CPlusPlusViewModel();
-            this.Documents = new ObservableCollection<DocumentViewModel>()
+            // Docking Manager Binding:  It appears that the items are based on a single collection. So, what probably
+            //                           has to happen is that you create all the proper template selectors, and even
+            //                           attached behaviors to intercept how to build the UI. Each of these will bind
+            //                           to the proper view model type.
+
+            this.DockingManagerItemsSource = new ObservableCollection<DockingManagerItemViewModel>()
             {
-                new DocumentViewModel()
+                new DocumentViewModel("", true)
                 {
-                    Title = "New File",
+                    FileName = "(new file)",
+                    IsDirty = true,
                     Contents = "Document Contents"
+                },
+                new SyntaxTemplateMainViewModel()
+                {
+                    Templates = new ObservableCollection<SyntaxTemplateViewModel>()
+                    {
+                        new SyntaxTemplateViewModel()
+                        {
+                            Name = "My Template",
+                            TemplateBody = "My Template Body with one parameter {name}",
+                            Parameters = new ObservableCollection<SyntaxTemplateParameterViewModel>()
+                            {
+                                new SyntaxTemplateParameterViewModel()
+                                {
+                                    Name = "name"
+                                }
+                            }
+                        }
+                    }
                 }
             };
         }
