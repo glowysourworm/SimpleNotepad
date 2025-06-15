@@ -1,0 +1,76 @@
+﻿<UserControl x:Class="SimpleNotepad.View.CodeClassView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SimpleNotepad.View"
+             xmlns:localModel="clr-namespace:SimpleNotepad.Model"
+             xmlns:simpleUI="clr-namespace:SimpleWpf.UI.Controls;assembly=SimpleWpf.UI">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <local:StringPropertyView StringName="Name" StringValue="{Binding Name, Mode=TwoWay}" />
+        <local:StringPropertyView StringName="Namespace" StringValue="{Binding Namespace, Mode=TwoWay}" Grid.Row="1" />
+        <local:BoolPropertyView BoolName="Is Container" BoolValue="{Binding IsContainer}" Grid.Row="2" />
+        
+        <!-- Class Templates -->
+        <GroupBox Header="Container Template(s)" Grid.Row="3" Visibility="{Binding ContainerTemplates, Converter={StaticResource CollectionNonEmptyVisibilityConverter}}">
+            <ListView ItemsSource="{Binding ContainerTemplates}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type localModel:CodeField}">
+                        <local:CodeTemplateSimpleView />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </GroupBox>        
+        
+        <!-- Fields -->
+        <GroupBox Header="Fields" Grid.Row="4" Visibility="{Binding Fields, Converter={StaticResource CollectionNonEmptyVisibilityConverter}}">
+            <ListView ItemsSource="{Binding Fields}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type localModel:CodeField}">
+                        <local:CodeFieldSimpleView />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </GroupBox>
+
+        <!-- Functions -->
+        <GroupBox Header="Functions" Grid.Row="5" Visibility="{Binding Functions, Converter={StaticResource CollectionNonEmptyVisibilityConverter}}">
+            <ListView ItemsSource="{Binding Functions}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type localModel:CodeField}">
+                        <local:CodeFieldSimpleView />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </GroupBox>
+
+        <!-- Default Functions -->
+        <GroupBox Header="Default Functions" Grid.Row="6" Visibility="{Binding DefaultFunctions, Converter={StaticResource CollectionNonEmptyVisibilityConverter}}">
+            <ListView ItemsSource="{Binding DefaultFunctions}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type localModel:CodeField}">
+                        <local:CodeFieldSimpleView />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </GroupBox>
+
+        <StackPanel HorizontalAlignment="Right" Grid.Row="7">
+            <Button Content="Add Template" Command="{Binding AddTemplateCommand}" Margin="2" Padding="3" />
+            <Button Content="Add Field" Command="{Binding AddFieldCommand}" Margin="2" Padding="3" />
+            <Button Content="Add Function" Command="{Binding AddFunctionCommand}" Margin="2" Padding="3" />
+            <Button Content="Create Default(s)" Command="{Binding CreateDefaultFunctionsCommand}" Margin="2" Padding="3" />
+            <Button Content="Create C++" x:Name="CreateCPPButton" Click="CreateCPPButton_Click" Margin="2" Padding="3" />
+        </StackPanel>
+        
+    </Grid>
+</UserControl>

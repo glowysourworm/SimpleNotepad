@@ -1,0 +1,38 @@
+﻿<UserControl x:Class="SimpleNotepad.View.CodeArgumentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SimpleNotepad.View"
+             xmlns:localModel="clr-namespace:SimpleNotepad.Model"
+             xmlns:simpleUI="clr-namespace:SimpleWpf.UI.Controls;assembly=SimpleWpf.UI">
+    <Grid>
+        <local:StringPropertyView StringName="Name" DataContext="{Binding Name}" />
+        <local:StringPropertyView StringName="Type" DataContext="{Binding Type}" />
+
+        <!--simpleUI:EnumFlagsControl EnumType="{x:Type localModel:CodeModifier}"
+                                      EnumValue="{Binding Modifier}"
+                                      Header="Field Modifier(s)" /-->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Field Type" HorizontalAlignment="Left" />
+            <simpleUI:EnumComboBox EnumType="{x:Type localModel:CodeFieldType}"
+                                      EnumValue="{Binding FieldType}" />
+        </Grid>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Argument Type" HorizontalAlignment="Left" />
+            <simpleUI:EnumComboBox EnumType="{x:Type localModel:CodeArgumentType}"
+                                      EnumValue="{Binding ArgumentType}" />
+        </Grid>
+
+        <local:StringPropertyView StringName="Bounded[X] Variable" DataContext="{Binding BoundedArrayLengthVariable}" />
+    </Grid>
+</UserControl>

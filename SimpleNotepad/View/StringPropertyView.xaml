@@ -1,0 +1,23 @@
+﻿<UserControl x:Class="SimpleNotepad.View.StringPropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             VerticalAlignment="Center" HorizontalAlignment="Stretch">
+    <Grid>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="{Binding StringName, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                   HorizontalAlignment="Left" 
+                   MinWidth="120" 
+                   Margin="3" />
+        
+        <TextBox Text="{Binding StringValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                 HorizontalAlignment="Stretch" 
+                 VerticalAlignment="Center" 
+                 MinWidth="150" 
+                 Grid.Column="1" Margin="3" />
+    </Grid>
+</UserControl>
