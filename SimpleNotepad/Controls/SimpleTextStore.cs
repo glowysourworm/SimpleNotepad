@@ -22,6 +22,7 @@ namespace SimpleNotepad.Controls
         private TextAlignment _alignment;
         private TextDecorationCollection _textDecorations;
         private Brush _textColor;
+        private Brush _textBackground;
         private Typeface _typeface;
 
         public string Text
@@ -30,14 +31,15 @@ namespace SimpleNotepad.Controls
             set { _text = value; }
         }
 
-        public SimpleTextStore(double pixelsPerDip)
+        public SimpleTextStore(double pixelsPerDip, Brush foreground, Brush background)
         {
             PixelsPerDip = pixelsPerDip;
 
             _fontSize = 12.0f;
             _alignment = TextAlignment.Left;
             _textDecorations = new TextDecorationCollection();
-            _textColor = Brushes.Black;
+            _textColor = foreground;
+            _textBackground = background;
             _typeface = new Typeface(new FontFamily("Arial"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         }
 
@@ -64,7 +66,7 @@ namespace SimpleNotepad.Controls
                 return new TextCharacters(_text, characterIndex, _text.Length - characterIndex,
                                           new SimpleTextRunProperties(_typeface, PixelsPerDip, _fontSize,
                                                                        _fontSize, _textDecorations, _textColor,
-                                                                       Brushes.White, BaselineAlignment.Baseline,
+                                                                       _textBackground, BaselineAlignment.Baseline,
                                                                        CultureInfo.CurrentUICulture));
             }
 

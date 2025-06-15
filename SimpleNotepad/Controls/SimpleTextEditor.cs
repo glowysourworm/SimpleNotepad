@@ -1,14 +1,7 @@
-﻿using System.Globalization;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.TextFormatting;
-
-using SimpleWpf.Extensions;
-
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SimpleNotepad.Controls
 {
@@ -62,7 +55,7 @@ namespace SimpleNotepad.Controls
             this.Cursor = Cursors.IBeam;
 
             _core = new SimpleTextEditorCore(this.FontSize, this.Foreground, Brushes.Transparent);
-            
+
             SetText("");
         }
 
@@ -101,16 +94,15 @@ namespace SimpleNotepad.Controls
             }
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected override void OnTextInput(TextCompositionEventArgs e)
         {
-            base.OnKeyDown(e);
+            base.OnTextInput(e);
 
-            _core.AppendChar((char)KeyInterop.VirtualKeyFromKey(e.Key));
+            _core.AppendText(e.Text);
 
             InvalidateMeasure();
             InvalidateVisual();
         }
-
         protected override void OnLostFocus(RoutedEventArgs e)
         {
             base.OnLostFocus(e);
@@ -130,7 +122,7 @@ namespace SimpleNotepad.Controls
 
             InvalidateVisual();
         }
-        
+
         private static void OnTextSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var editor = d as SimpleTextEditor;
@@ -158,15 +150,15 @@ namespace SimpleNotepad.Controls
             drawingContext.DrawRectangle(background, new Pen(border, this.BorderThickness.Top), new Rect(this.RenderSize));
 
             // Control Area
-            var textArea = new Rect(this.Padding.Left, 
-                                    this.Padding.Top, 
-                                    this.RenderSize.Width - this.Padding.Left - this.Padding.Right, 
+            var textArea = new Rect(this.Padding.Left,
+                                    this.Padding.Top,
+                                    this.RenderSize.Width - this.Padding.Left - this.Padding.Right,
                                     this.RenderSize.Height - this.Padding.Top - this.Padding.Bottom);
 
             var textRendering = _core.GetRendering(textArea.Size);          // Used for the measurement
             var caretBounds = _core.GetCaretRenderBounds();
-            var caretRenderBounds = new Rect(caretBounds.X + textArea.X, 
-                                             caretBounds.Y + textArea.Y, 
+            var caretRenderBounds = new Rect(caretBounds.X + textArea.X,
+                                             caretBounds.Y + textArea.Y + 4,            // KLUDGE
                                              caretBounds.Width, caretBounds.Height);
 
             // Text Bitmap (if TextStore has non-null / empty text)

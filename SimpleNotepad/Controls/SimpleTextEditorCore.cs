@@ -36,8 +36,8 @@ namespace SimpleNotepad.Controls
         public SimpleTextEditorCore(double fontSize, Brush foreground, Brush background)
         {
             _textLines = new List<TextLine>();
-            _textStore = new SimpleTextStore(_renderingBitmapDPI);
-            _emptyTextStore = new SimpleTextStore(_renderingBitmapDPI);
+            _textStore = new SimpleTextStore(_renderingBitmapDPI, foreground, background);
+            _emptyTextStore = new SimpleTextStore(_renderingBitmapDPI, foreground, background);
             _textStore.Text = string.Empty;
             _emptyTextStore.Text = string.Empty;
             _renderingBitmap = new RenderTargetBitmap(100, 100, _renderingBitmapDPI, _renderingBitmapDPI, PixelFormats.Default);
@@ -106,6 +106,8 @@ namespace SimpleNotepad.Controls
 
                 // Update the line position coordinate for the displayed line.
                 linePosition.Y += textLine.Height;
+
+                // (This is essentially for the caret)
                 lineHeight = textLine.TextHeight;
 
                 // Use these to render w/o re-formatting
@@ -117,7 +119,7 @@ namespace SimpleNotepad.Controls
                 lineHeight = _formatter.FormatLine(_emptyTextStore, 0, constraint.Width, _paragraphProperties, null).TextHeight;
 
             _caretRenderBounds.X = characterOffset.X;
-            _caretRenderBounds.Y = Math.Max(characterOffset.Y - lineHeight, 0);
+            _caretRenderBounds.Y = 0; // Math.Max(characterOffset.Y - lineHeight, 0);
             _caretRenderBounds.Width = 2;
             _caretRenderBounds.Height = lineHeight;
 
