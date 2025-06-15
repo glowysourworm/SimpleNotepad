@@ -33,26 +33,30 @@ namespace SimpleNotepad.Controls
         List<TextLine> _textLines;
         bool _isDirty = true;
 
-        public SimpleTextEditorCore(double fontSize, Brush foreground, Brush background)
+        public SimpleTextEditorCore(FontFamily fontFamily, 
+                                    double fontSize, 
+                                    Brush foreground, 
+                                    Brush background,
+                                    TextWrapping textWrapping)
         {
-            _textLines = new List<TextLine>();
-            _textStore = new SimpleTextStore(_renderingBitmapDPI, foreground, background);
-            _emptyTextStore = new SimpleTextStore(_renderingBitmapDPI, foreground, background);
-            _textStore.Text = string.Empty;
-            _emptyTextStore.Text = string.Empty;
-            _renderingBitmap = new RenderTargetBitmap(100, 100, _renderingBitmapDPI, _renderingBitmapDPI, PixelFormats.Default);
+            _formatter = TextFormatter.Create(TextFormattingMode.Ideal);
 
-            // Some Defaults
-            var typeface = new Typeface(new FontFamily("Consolas"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            var typeface = new Typeface(fontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
             _textProperties = new SimpleTextRunProperties(typeface, PixelsPerDip, fontSize, fontSize, null,
                                                           foreground, background,
                                                           BaselineAlignment.Baseline, CultureInfo.CurrentUICulture);
 
             _paragraphProperties = new SimpleTextParagraphProperties(FlowDirection.LeftToRight, TextAlignment.Left, false, false,
-                                                                     _textProperties, TextWrapping.NoWrap, _lineHeight, _indent);
+                                                                     _textProperties, textWrapping, _lineHeight, _indent);
 
-            _formatter = TextFormatter.Create(TextFormattingMode.Ideal);
+            _textLines = new List<TextLine>();
+            _textStore = new SimpleTextStore(_renderingBitmapDPI, _textProperties);
+            _emptyTextStore = new SimpleTextStore(_renderingBitmapDPI, _textProperties);
+            _textStore.Text = string.Empty;
+            _emptyTextStore.Text = string.Empty;
+
+            _renderingBitmap = new RenderTargetBitmap(100, 100, _renderingBitmapDPI, _renderingBitmapDPI, PixelFormats.Default);
         }
 
         public void SetText(string text)
@@ -67,11 +71,88 @@ namespace SimpleNotepad.Controls
             _isDirty = true;
         }
 
+        public bool Backspace()
+        {
+            if (_textStore.Text.Length > 0)
+            {
+                _textStore.Text = _textStore.Text.Substring(0, _textStore.Text.Length - 1);
+                _isDirty = true;
+                return true;
+            }
+            return false;
+        }
+
         public void AppendChar(char character)
         {
             _textStore.Text += character;
             _isDirty = true;
         }
+
+        /*
+        public IEnumerable<TextLine> GetTextLines(ref Size constraint, out Rect caretRenderBounds)
+        {
+            _textLines.Clear();
+            _isDirty = true;
+
+            var characterPosition = 0;
+            var characterOffset = new Point(0, 0);
+            var lineHeight = 0.0D;
+            var lineExtentHeight = 0.0D;
+            var controlWidth = constraint.Width;
+            var desiredHeight = 0.0D;
+            var desiredWidth = 0.0D;
+            var linePosition = new Point();
+
+            TextLineBreak lastLineBreak = null;
+
+            // Format each line of text from the text store and draw it.
+            while (characterPosition < _textStore.Text.Length)
+            {
+                // Create a textline from the text store using the TextFormatter object. (CUSTOMIZE!!!)
+                var textLine = _formatter.FormatLine(_textStore, characterPosition, controlWidth, _paragraphProperties, lastLineBreak);
+
+                lastLineBreak = textLine.GetTextLineBreak();
+
+                // Measure the text line
+                desiredHeight += textLine.TextHeight;
+
+                if (textLine.WidthIncludingTrailingWhitespace > desiredWidth)
+                    desiredWidth = textLine.WidthIncludingTrailingWhitespace;
+
+                // Use the text lines to resize the rendered image
+                // Update the index position in the text store.
+                characterPosition += textLine.Length;
+                characterOffset.X = textLine.WidthIncludingTrailingWhitespace;                 // Used to track the caret
+                characterOffset.Y += textLine.TextHeight;
+
+                // Update the line position coordinate for the displayed line.
+                linePosition.Y += textLine.TextHeight;
+
+                // (This is essentially for the caret)
+                lineHeight = textLine.TextHeight;
+                lineExtentHeight = textLine.Extent;
+
+                // Use these to render w/o re-formatting
+                _textLines.Add(textLine);
+            }
+
+            // Measure Caret while we're here (check for empty text)
+            if (lineHeight == 0)
+                lineHeight = _formatter.FormatLine(_emptyTextStore, 0, constraint.Width, _paragraphProperties, null).TextHeight;
+
+            _caretRenderBounds.X = characterOffset.X;
+            _caretRenderBounds.Y = Math.Max(characterOffset.Y - lineHeight, 0);
+            _caretRenderBounds.Width = 2;
+            _caretRenderBounds.Height = lineHeight;
+
+            constraint.Width = desiredWidth;
+            constraint.Height = desiredHeight;
+
+            caretRenderBounds = _caretRenderBounds;
+
+            return _textLines;
+        }
+        */
 
         public Size MeasureText(Size constraint)
         {
@@ -86,11 +167,15 @@ namespace SimpleNotepad.Controls
             var desiredWidth = 0.0D;
             var linePosition = new Point();
 
+            TextLineBreak lastLineBreak = null;
+
             // Format each line of text from the text store and draw it.
             while (characterPosition < _textStore.Text.Length)
             {
                 // Create a textline from the text store using the TextFormatter object. (CUSTOMIZE!!!)
-                var textLine = _formatter.FormatLine(_textStore, characterPosition, controlWidth, _paragraphProperties, null);
+                var textLine = _formatter.FormatLine(_textStore, characterPosition, controlWidth, _paragraphProperties, lastLineBreak);
+
+                lastLineBreak = textLine.GetTextLineBreak();
 
                 // Measure the text line
                 desiredHeight += textLine.TextHeight;
@@ -101,11 +186,11 @@ namespace SimpleNotepad.Controls
                 // Use the text lines to resize the rendered image
                 // Update the index position in the text store.
                 characterPosition += textLine.Length;
-                characterOffset.X = textLine.Width;                 // Used to track the caret
+                characterOffset.X = textLine.WidthIncludingTrailingWhitespace;                 // Used to track the caret
                 characterOffset.Y += textLine.TextHeight;
 
                 // Update the line position coordinate for the displayed line.
-                linePosition.Y += textLine.Height;
+                linePosition.Y += textLine.TextHeight;
 
                 // (This is essentially for the caret)
                 lineHeight = textLine.TextHeight;
@@ -119,11 +204,16 @@ namespace SimpleNotepad.Controls
                 lineHeight = _formatter.FormatLine(_emptyTextStore, 0, constraint.Width, _paragraphProperties, null).TextHeight;
 
             _caretRenderBounds.X = characterOffset.X;
-            _caretRenderBounds.Y = 0; // Math.Max(characterOffset.Y - lineHeight, 0);
+            _caretRenderBounds.Y = Math.Max(characterOffset.Y - lineHeight, 0);
             _caretRenderBounds.Width = 2;
             _caretRenderBounds.Height = lineHeight;
 
             return new Size(desiredWidth, desiredHeight);
+        }
+
+        public IEnumerable<TextLine> GetTextLines()
+        {
+            return _textLines;
         }
 
         public Rect GetCaretRenderBounds()

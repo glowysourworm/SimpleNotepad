@@ -20,22 +20,23 @@
         <TextBlock Text="Input" Margin="4" FontSize="18" HorizontalAlignment="Left" />
         <TextBlock Text="Output" Grid.Column="1" Margin="4" FontSize="18" HorizontalAlignment="Left" />
 
-        <!--control:SimpleTextEditor x:Name="InputTB" 
-                                  FontSize="14" 
-                                  Padding="10"
-                                  Foreground="Red"
-                                  Background="#0F000000"
+        <control:SimpleTextEditor x:Name="InputTB" 
+                                  FontSize="14"
+                                  Padding="5"
+                                  FontFamily="Segoe UI"
+                                  Foreground="Gray"
+                                  Background="#0FFFFFFF"
                                   BorderBrush="Gray"
                                   BorderThickness="1"
-                                  FocusedBackground="#0F0000FF"
+                                  FocusedBackground="#3FFFFFFF"
                                   FocusedBorderBrush="DodgerBlue"
                                   FocusedCaretBrush="Gray"
-                                  CaretBrush="LightGray"                                  
+                                  CaretBrush="Gray"                                  
                                   Grid.Row="1"  
                                   VerticalAlignment="Stretch" 
-                                  HorizontalAlignment="Stretch" /-->
+                                  HorizontalAlignment="Stretch" />
 
-        <TextBox x:Name="InputTB" FontSize="14" Grid.Row="1" Grid.Column="0" AcceptsReturn="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto"  />
+        <!--TextBox x:Name="InputTB" FontSize="14" Grid.Row="1" Grid.Column="0" AcceptsReturn="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto"  /-->
         <TextBox x:Name="OutputTB" FontSize="14" Grid.Row="1" Grid.Column="1" AcceptsReturn="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto"  />
 
         <StackPanel Grid.Row="1" Grid.Column="2" Margin="8">

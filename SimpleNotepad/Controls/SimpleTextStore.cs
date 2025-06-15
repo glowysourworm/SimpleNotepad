@@ -1,7 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.Windows;
-using System.Windows.Media;
+﻿using System.Globalization;
 using System.Windows.Media.TextFormatting;
 
 namespace SimpleNotepad.Controls
@@ -18,12 +15,7 @@ namespace SimpleNotepad.Controls
         private string _text;
 
         // Font Rendering Properties
-        private double _fontSize;
-        private TextAlignment _alignment;
-        private TextDecorationCollection _textDecorations;
-        private Brush _textColor;
-        private Brush _textBackground;
-        private Typeface _typeface;
+        private SimpleTextRunProperties _properties;
 
         public string Text
         {
@@ -31,16 +23,11 @@ namespace SimpleNotepad.Controls
             set { _text = value; }
         }
 
-        public SimpleTextStore(double pixelsPerDip, Brush foreground, Brush background)
+        public SimpleTextStore(double pixelsPerDip, SimpleTextRunProperties properties)
         {
-            PixelsPerDip = pixelsPerDip;
+            this.PixelsPerDip = pixelsPerDip;
 
-            _fontSize = 12.0f;
-            _alignment = TextAlignment.Left;
-            _textDecorations = new TextDecorationCollection();
-            _textColor = foreground;
-            _textBackground = background;
-            _typeface = new Typeface(new FontFamily("Arial"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            _properties = properties;
         }
 
         /// <summary>
@@ -63,11 +50,7 @@ namespace SimpleNotepad.Controls
             // Create TextCharacters using the current font rendering properties.
             if (characterIndex < _text.Length)
             {
-                return new TextCharacters(_text, characterIndex, _text.Length - characterIndex,
-                                          new SimpleTextRunProperties(_typeface, PixelsPerDip, _fontSize,
-                                                                       _fontSize, _textDecorations, _textColor,
-                                                                       _textBackground, BaselineAlignment.Baseline,
-                                                                       CultureInfo.CurrentUICulture));
+                return new TextCharacters(_text, characterIndex, _text.Length - characterIndex, _properties);
             }
 
             // Return an end-of-paragraph if no more text source.

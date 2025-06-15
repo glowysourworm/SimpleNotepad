@@ -1,7 +1,10 @@
-﻿using System.Windows;
+﻿using System.Globalization;
+using System.Reflection;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.TextFormatting;
 
 namespace SimpleNotepad.Controls
 {
@@ -48,26 +51,27 @@ namespace SimpleNotepad.Controls
             set { SetValue(CaretBrushProperty, value); }
         }
 
-        SimpleTextEditorCore _core;
+        SimpleTextEditorCore _core;        
 
         public SimpleTextEditor()
         {
             this.Cursor = Cursors.IBeam;
 
-            _core = new SimpleTextEditorCore(this.FontSize, this.Foreground, Brushes.Transparent);
-
-            SetText("");
+            this.Loaded += SimpleTextEditor_Loaded;
         }
 
-        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        private void SimpleTextEditor_Loaded(object sender, RoutedEventArgs e)
         {
-            base.OnRenderSizeChanged(sizeInfo);
+            _core = new SimpleTextEditorCore(this.FontFamily, this.FontSize, this.Foreground, Brushes.Transparent, TextWrapping.Wrap);
 
             SetText("");
         }
 
         protected void SetText(string text)
         {
+            if (_core == null)
+                return;
+
             _core.SetText(text);
 
             InvalidateMeasure();
@@ -76,6 +80,9 @@ namespace SimpleNotepad.Controls
 
         protected override Size MeasureOverride(Size constraint)
         {
+            if (_core == null)
+                return constraint;
+
             if (constraint.Width == 0 ||
                 double.IsNaN(constraint.Width) ||
                 constraint.Height == 0 ||
@@ -84,25 +91,45 @@ namespace SimpleNotepad.Controls
 
             else
             {
-                var desiredSize = _core.MeasureText(constraint);
-
                 // Add Control Padding
-                desiredSize.Width += this.Padding.Left + this.Padding.Right;
-                desiredSize.Height += this.Padding.Top + this.Padding.Bottom;
+                constraint.Width -= (this.Padding.Left + this.Padding.Right);
+                constraint.Height -= (this.Padding.Top + this.Padding.Bottom);
+
+                var desiredSize = _core.MeasureText(constraint);
 
                 return desiredSize;
             }
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            if (e.Key == Key.Back)
+            {
+                _core.Backspace();
+                e.Handled = true;
+
+                InvalidateMeasure();
+                InvalidateVisual();
+            }
+        }
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
-            base.OnTextInput(e);
+            base.OnTextInput(e);   
 
             _core.AppendText(e.Text);
 
             InvalidateMeasure();
             InvalidateVisual();
         }
+
+        protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+        {
+            base.OnPreviewTextInput(e);
+        }
+
+        
         protected override void OnLostFocus(RoutedEventArgs e)
         {
             base.OnLostFocus(e);
@@ -134,6 +161,49 @@ namespace SimpleNotepad.Controls
         {
             base.OnRender(drawingContext);
 
+            if (_core == null)
+                return;
+
+            Brush background = this.Background;
+            Brush border = this.BorderBrush;
+            Brush caret = this.CaretBrush;
+
+            // Limited Focus Visual Style
+            if (this.IsFocused || this.IsKeyboardFocused)
+            {
+                background = this.FocusedBackground;
+                border = this.FocusedBorderBrush;
+                caret = this.FocusedCaretBrush;
+            }
+
+            // Border / Background (Outer Padded Area + Control Area)
+            drawingContext.DrawRectangle(background, new Pen(border, this.BorderThickness.Top), new Rect(this.RenderSize));
+
+            var caretBounds = _core.GetCaretRenderBounds();
+            var constraint = new Size(this.RenderSize.Width - this.Padding.Left - this.Padding.Right, 
+                                      this.RenderSize.Height - this.Padding.Top - this.Padding.Bottom);
+            var position = new Point(0, this.Padding.Top);
+
+            foreach (var textLine in _core.GetTextLines())
+            {
+                //var text = new FormattedText(this.TextSource, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, _typeface, this.FontSize, this.Foreground);
+
+                position.X = textLine.Start + this.Padding.Left;
+                position.Y += textLine.TextHeight;
+                textLine.Draw(drawingContext, position, InvertAxes.None);
+
+                //drawingContext.DrawText(text, new Point(this.Padding.Left, this.Padding.Top));
+            }
+
+            if (caretBounds.Height > 0)
+            {
+                caretBounds.X += this.Padding.Left + 2; // KLUDGE
+                caretBounds.Y += this.Padding.Top + 2;
+
+                drawingContext.DrawRectangle(caret, null, caretBounds);
+            }
+
+            /*
             Brush background = this.Background;
             Brush border = this.BorderBrush;
             Brush caret = this.CaretBrush;
@@ -170,6 +240,7 @@ namespace SimpleNotepad.Controls
             // Caret (pre-measured)
             if (caretRenderBounds.Height > 0)
                 drawingContext.DrawRectangle(caret, null, caretRenderBounds);
+            */
         }
     }
 }
