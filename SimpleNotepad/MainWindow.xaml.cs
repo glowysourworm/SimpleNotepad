@@ -1,11 +1,15 @@
 ﻿using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Shapes;
 
 using EMA.ExtendedWPFVisualTreeHelper;
 
 using SimpleNotepad.View;
 using SimpleNotepad.ViewModel;
+
+using SimpleWpf.Extensions.Collection;
 
 namespace SimpleNotepad
 {
@@ -25,7 +29,7 @@ namespace SimpleNotepad
         {
             try
             {
-                var configuration = Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
+                var configuration = System.IO.Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
                 var json = File.ReadAllText(configuration);
                 var viewModel = System.Text.Json.JsonSerializer.Deserialize<MainViewModel>(json, new System.Text.Json.JsonSerializerOptions()
                 {
@@ -60,7 +64,7 @@ namespace SimpleNotepad
                     AllowTrailingCommas = false,
                     WriteIndented = true
                 });
-                var configuration = Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
+                var configuration = System.IO.Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
 
                 File.WriteAllText(configuration, json);
             }
@@ -78,19 +82,26 @@ namespace SimpleNotepad
 
             if (view != null)
             {
+                // Start BeginUpdate (holds binding / undo updates until we're finished)
+                view.Editor.Document.BeginUpdate();
+
+                var changes = new List<string>();
+
                 foreach (var line in view.Editor.Document.Lines)
                 {
-                    // Start BeginUpdate (holds binding / undo updates until we're finished)
-                    //view.Editor.Document.BeginUpdate();
-
                     // Get line of text
                     var text = view.Editor.Document.GetText(line.Offset, line.Length);
 
                     // Split the current line of text and use as input parameters of the template
                     var parameterInputs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+                    // TODO: Notify user that parameters don't match
                     if (parameterInputs.Length != template.Parameters.Count)
-                        throw new Exception("Parameter count mismatch. Cannot apply template. Please be sure that the number of parameters per line matches the template.");
+                    {
+                        changes.Add(text);
+                        continue;
+                    }
+                        
 
                     var outputText = text;
 
@@ -108,11 +119,13 @@ namespace SimpleNotepad
                             outputText = outputText.Replace("{" + parameterName + "}", parameterInputs[index]);
                     }
 
-                    view.Editor.Document.Replace(line.Offset, line.Length, outputText);
-
-                    // End Update -> Apply Bindings / Undo
-                    //view.Editor.Document.EndUpdate();
+                    changes.Add(outputText);
                 }
+
+                view.Editor.Document.Text = changes.Join("\n", x => x);
+
+                // End Update -> Apply Bindings / Undo
+                view.Editor.Document.EndUpdate();
             }
         }
     }

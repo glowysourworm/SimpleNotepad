@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 using SimpleWpf.Extensions;
+using SimpleWpf.Extensions.Command;
 
 namespace SimpleNotepad.ViewModel
 {
@@ -9,6 +11,9 @@ namespace SimpleNotepad.ViewModel
         string _name;
         string _templateBody;
         ObservableCollection<SyntaxTemplateParameterViewModel> _parameters;
+
+        SimpleCommand _addParameterCommand;
+        SimpleCommand<SyntaxTemplateParameterViewModel> _removeParameterCommand;
 
         public string Name
         {
@@ -26,11 +31,37 @@ namespace SimpleNotepad.ViewModel
             set { this.RaiseAndSetIfChanged(ref _parameters, value); }
         }
 
+        [JsonIgnore]
+        public SimpleCommand AddParameterCommand
+        {
+            get { return _addParameterCommand; }
+            set { this.RaiseAndSetIfChanged(ref _addParameterCommand, value); }
+        }
+
+        [JsonIgnore]
+        public SimpleCommand<SyntaxTemplateParameterViewModel> RemoveParameterCommand
+        {
+            get { return _removeParameterCommand; }
+            set { this.RaiseAndSetIfChanged(ref _removeParameterCommand, value); }
+        }
+
         public SyntaxTemplateViewModel()
         {
             this.Name = string.Empty;
             this.TemplateBody = string.Empty;
             this.Parameters = new ObservableCollection<SyntaxTemplateParameterViewModel>();
+
+            this.AddParameterCommand = new SimpleCommand(() =>
+            {
+                this.Parameters.Add(new SyntaxTemplateParameterViewModel()
+                {
+                    Parameter = "parameter"
+                });
+            });
+            this.RemoveParameterCommand = new SimpleCommand<SyntaxTemplateParameterViewModel>(parameter =>
+            {
+                this.Parameters.Remove(parameter);
+            });
         }
     }
 }

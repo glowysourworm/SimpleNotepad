@@ -52,22 +52,50 @@
 
                 <Border>
                     <Grid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5">
-                            <TextBlock Text="Template: " />
-                            <TextBlock Text="{Binding Name}" />
-                        </StackPanel>
 
-                        <Button fa5:Awesome.Content="Solid_Plus" ToolTip="Add Parameter" HorizontalAlignment="Right" Padding="5" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Text="Template: " Margin="3" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding Name}" Grid.Column="1" VerticalContentAlignment="Center" />
+
+                        <Button fa5:Awesome.Content="Solid_Plus" 
+                                Grid.Column="2"
+                                Command="{Binding AddParameterCommand}"
+                                ToolTip="Add Parameter" 
+                                HorizontalAlignment="Right" Padding="5" />
                     </Grid>
                 </Border>
                 
-                <ListBox ItemsSource="{Binding Parameters}" Grid.Row="1">
-                    <ListBox.ItemTemplate>
+                <ItemsControl ItemsSource="{Binding Parameters}" Background="White"
+                              Grid.Row="1">
+
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <view:StringPropertyView StringName="Parameter (in order)" StringValue="{Binding Parameter}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <view:StringPropertyView StringName="Parameter (in order)" 
+                                                         StringValue="{Binding Parameter, Mode=TwoWay}" />
+
+                                <Button fa5:Awesome.Content="Solid_Minus" 
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.RemoveParameterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Mode=Self}}"
+                                        Margin="3"
+                                        Width="16"
+                                        Height="16" />
+                            </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 
             </Grid>
         </Border>
