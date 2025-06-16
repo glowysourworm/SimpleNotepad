@@ -7,6 +7,8 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <converter:CollectionNonEmptyVisibilityConverter x:Key="CollectionNonEmptyVisibilityConverter" />
+        <converter:BoolVisibilityCollapseConverter x:Key="BoolVisibilityCollapseConverter" />
+        
         <selectors:MainDockerDataTemplateSelector x:Key="MainDockerDataTemplateSelector" />
     </Application.Resources>
 </Application>

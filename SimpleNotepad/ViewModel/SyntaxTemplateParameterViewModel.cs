@@ -4,17 +4,17 @@ namespace SimpleNotepad.ViewModel
 {
     public class SyntaxTemplateParameterViewModel : ViewModelBase
     {
-        string _name;
+        string _parameter;
 
-        public string Name
+        public string Parameter
         {
-            get { return _name; }
-            set { this.RaiseAndSetIfChanged(ref _name, value); }
+            get { return _parameter; }
+            set { this.RaiseAndSetIfChanged(ref _parameter, value); }
         }
 
         public SyntaxTemplateParameterViewModel()
         {
-            this.Name = string.Empty;
+            this.Parameter = string.Empty;
         }
     }
 }

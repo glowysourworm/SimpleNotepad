@@ -1,18 +1,82 @@
 ﻿<UserControl x:Class="SimpleNotepad.View.SyntaxTemplateMainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SimpleNotepad.View"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             xmlns:fa5="http://schemas.fontawesome.com/icons/"
+             xmlns:view="clr-namespace:SimpleNotepad.View"
+             FontSize="14">
     <Grid>
-        <ListBox ItemsSource="{Binding Templates}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Name}" />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Main Template List -->
+        <Border Height="300">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border>
+                    <Grid VerticalAlignment="Center">
+                        <TextBlock Text="Syntax Templates" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+                        <Button fa5:Awesome.Content="Solid_Plus" ToolTip="Add Template" HorizontalAlignment="Right" Padding="5" />
+                    </Grid>
+                </Border>
+                
+                <ListBox x:Name="TemplateLB" ItemsSource="{Binding Templates}" Grid.Row="1">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+            </Grid>
+        </Border>
+
+        <!-- Selected Template Parameters -->
+        <Border Grid.Column="1" MinWidth="300" MaxWidth="500" Grid.RowSpan="2" DataContext="{Binding SelectedItem, ElementName=TemplateLB}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border>
+                    <Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5">
+                            <TextBlock Text="Template: " />
+                            <TextBlock Text="{Binding Name}" />
+                        </StackPanel>
+
+                        <Button fa5:Awesome.Content="Solid_Plus" ToolTip="Add Parameter" HorizontalAlignment="Right" Padding="5" />
+                    </Grid>
+                </Border>
+                
+                <ListBox ItemsSource="{Binding Parameters}" Grid.Row="1">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <view:StringPropertyView StringName="Parameter 1" StringValue="{Binding Parameter}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+            </Grid>
+        </Border>
+
+        <!-- Selected Template Body -->
+        <view:DocumentView Source="{Binding TemplateBody}" 
+                           IsChanged="{Binding IsDirty, Mode=TwoWay}"
+                           Grid.Row="1" Grid.ColumnSpan="1" 
+                           DataContext="{Binding SelectedItem, ElementName=TemplateLB}" />
+        
     </Grid>
 </UserControl>

@@ -7,7 +7,6 @@ namespace SimpleNotepad.ViewModel
     {
         string _fileName;
         string _contents;
-        bool _isDirty;
         SimpleCommand _closeCommand;
 
         public string FileName
@@ -20,11 +19,6 @@ namespace SimpleNotepad.ViewModel
             get { return _contents; }
             set { this.RaiseAndSetIfChanged(ref _contents, value); }
         }
-        public bool IsDirty
-        {
-            get { return _isDirty; }
-            set { this.RaiseAndSetIfChanged(ref _isDirty, value); }
-        }
         public SimpleCommand CloseCommand
         {
             get { return _closeCommand; }
@@ -36,7 +30,7 @@ namespace SimpleNotepad.ViewModel
         {
             this.FileName = string.Empty;
             this.Contents = string.Empty;
-            this.IsDirty = true;
+            this.IsSelected = false;
             this.CloseCommand = new SimpleCommand(() =>
             {
 

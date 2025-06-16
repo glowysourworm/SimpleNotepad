@@ -12,6 +12,35 @@
         xmlns:selector="clr-namespace:SimpleNotepad.View.DataTemplateSelectors"
         xmlns:view="clr-namespace:SimpleNotepad.View"
         Title="Simple Notepad" Height="700" Width="1200">
+    <Window.Resources>
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style x:Key="ToolbarRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="#3F00CCFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                        
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>        
+    </Window.Resources>
     <Grid>
 
         <Grid.RowDefinitions>
@@ -31,18 +60,26 @@
         </Menu>
 
         <ToolBar Grid.Row="1">
-            <ToolBarPanel Orientation="Horizontal">
-                <Button fa5:Awesome.Content="Regular_Circle" />
-                <Button fa5:Awesome.Content="Solid_Stop" />
-                <Button fa5:Awesome.Content="Solid_Play" />
-                <Button fa5:Awesome.Content="Solid_FastForward" />
+            <ToolBarPanel Orientation="Horizontal" Margin="5">
+                <Button fa5:Awesome.Content="Solid_Circle" Style="{StaticResource ToolbarButtonStyle}" />
+                <Button fa5:Awesome.Content="Solid_Stop" Style="{StaticResource ToolbarButtonStyle}" />
+                <Button fa5:Awesome.Content="Solid_Play" 
+                        Command="{Binding PlayCommand}"                        
+                        Style="{StaticResource ToolbarButtonStyle}" 
+                        ToolTip="Play Current Line" />
+                <Button fa5:Awesome.Content="Solid_FastForward" Style="{StaticResource ToolbarButtonStyle}" ToolTip="Play Until End Of File" />
             </ToolBarPanel>
-            <ToolBarPanel Orientation="Horizontal">
-                <Button fa5:Awesome.Content="Regular_Circle" />
-                <Button fa5:Awesome.Content="Solid_Stop" />
-                <Button fa5:Awesome.Content="Solid_Play" />
-                <Button fa5:Awesome.Content="Solid_FastForward" />
-            </ToolBarPanel>            
+            <ToolBarPanel Orientation="Horizontal" Margin="5">
+                <RadioButton GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Macro</RadioButton>
+                <RadioButton GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Syntax Template</RadioButton>
+            </ToolBarPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Active Template" Margin="5" VerticalAlignment="Center" />
+                <ComboBox Width="200" DisplayMemberPath="Name" 
+                          SelectedValue="{Binding SelectedSyntaxTemplate}"
+                          ItemsSource="{Binding SyntaxTemplates}" 
+                          Margin="5" VerticalAlignment="Center" />
+            </StackPanel>
         </ToolBar>
         
         <dock:DockingManager x:Name="DockingManager" Grid.Row="2"
@@ -58,7 +95,7 @@
 
                         <!-- Default = Document template -->
                         <DataTemplate>
-                            <view:DocumentView Source="{Binding Model.Contents}" />
+                            <view:DocumentView Source="{Binding Model.Contents, Mode=TwoWay}" IsChanged="{Binding Model.IsDirty, Mode=TwoWay}" />
                         </DataTemplate>
 
                     </selector:MainDockerDataTemplateSelector.DocumentTemplateDefault>
@@ -66,7 +103,7 @@
                         
                         <!-- SyntaxTemplates = Syntax Template Main View -->
                         <DataTemplate>
-                            <view:SyntaxTemplateMainView DataContext="{Binding SyntaxTemplateMain}" />
+                            <view:SyntaxTemplateMainView />
                         </DataTemplate>
                         
                     </selector:MainDockerDataTemplateSelector.SyntaxTemplatesMain>
@@ -80,6 +117,7 @@
                     <!-- NOT OBVIOUS!!! (Model is an internal property - which contains our ViewModel) -->
                     <Setter Property="Title" Value="{Binding Model.Header}" />
                     <Setter Property="ToolTip" Value="{Binding Model.FileName}" />
+                    <Setter Property="IsSelected" Value="{Binding Model.IsSelected, Mode=TwoWay}" />
                 </Style>
             </dock:DockingManager.LayoutItemContainerStyle>
 

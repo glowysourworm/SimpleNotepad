@@ -3,6 +3,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
+using AvalonDock.Controls;
+
+using SimpleNotepad.ViewModel;
+
 namespace SimpleNotepad.View
 {
     public partial class DocumentView : UserControl
@@ -12,10 +16,18 @@ namespace SimpleNotepad.View
         public static readonly DependencyProperty SourceProperty =
             DependencyProperty.Register("Source", typeof(string), typeof(DocumentView), new PropertyMetadata(OnSourceChanged));
 
+        public static readonly DependencyProperty IsChangedProperty =
+            DependencyProperty.Register("IsChanged", typeof(bool), typeof(DocumentView));
+
         public string Source
         {
             get { return (string)GetValue(SourceProperty); }
             set { SetValue(SourceProperty, value); }
+        }
+        public bool IsChanged
+        {
+            get { return (bool)GetValue(IsChangedProperty); }
+            set { SetValue(IsChangedProperty, value); }
         }
 
         public DocumentView()
@@ -23,6 +35,16 @@ namespace SimpleNotepad.View
             InitializeComponent();
 
             this.Editor.SyntaxHighlighting = HL.Manager.ThemedHighlightingManager.Instance.GetDefinition("C#");
+
+            this.DataContextChanged += DocumentView_DataContextChanged;
+        }
+
+        private void DocumentView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var viewModel = e.NewValue as DocumentViewModel;
+
+            if (viewModel != null)
+                this.Editor.Text = viewModel.Contents;
         }
 
         private void UpdateFromSource()
@@ -34,7 +56,21 @@ namespace SimpleNotepad.View
         // Editor binding -> Their Data
         private void Editor_TextChanged(object sender, EventArgs e)
         {
-            this.Source = this.Editor.Text;
+            var viewModel = this.DataContext as DocumentViewModel;
+
+            if (viewModel != null &&
+                this.Source != null &&
+                this.Source != this.Editor.Text)
+            {
+                viewModel.IsDirty = true;
+
+                // Binding could take care of this part
+                this.Source = this.Editor.Text;
+            }
+            else
+            {
+                this.Source = this.Editor.Text;
+            }
         }
 
         // Source binding -> Our Control
