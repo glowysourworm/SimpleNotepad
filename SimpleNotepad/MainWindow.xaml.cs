@@ -1,8 +1,6 @@
-﻿using System.IO;
+﻿using System.ComponentModel;
+using System.IO;
 using System.Windows;
-using System.Xml;
-
-using AvalonDock.Themes;
 
 using EMA.ExtendedWPFVisualTreeHelper;
 
@@ -13,15 +11,63 @@ namespace SimpleNotepad
 {
     public partial class MainWindow : Window
     {
+        public const string CONFIG_FILE = ".SimpleNotepad";
+
         public MainWindow()
         {
             InitializeComponent();
 
-            var viewModel = new MainViewModel();
+            this.Loaded += MainWindow_Loaded;
+            this.Closing += MainWindow_Closing;
+        }
 
-            viewModel.PlaySyntaxTemplateEvent += OnPlaySyntaxTemplateEvent;
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var configuration = Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
+                var json = File.ReadAllText(configuration);
+                var viewModel = System.Text.Json.JsonSerializer.Deserialize<MainViewModel>(json, new System.Text.Json.JsonSerializerOptions()
+                {
+                    AllowTrailingCommas = false,
+                    WriteIndented = true
+                });
 
-            this.DataContext = viewModel;
+                if (viewModel == null ||
+                   !viewModel.IsValid())
+                    viewModel = MainViewModel.CreateDefault();
+
+                viewModel.PlaySyntaxTemplateEvent += OnPlaySyntaxTemplateEvent;
+
+                this.DataContext = viewModel;
+            }
+            catch (Exception ex)
+            {
+                // TODO: LOG
+
+                if (this.DataContext == null)
+                    this.DataContext = MainViewModel.CreateDefault();
+            }
+        }
+
+        private void MainWindow_Closing(object? sender, CancelEventArgs e)
+        {
+            try
+            {
+                var viewModel = this.DataContext as MainViewModel;
+                var json = System.Text.Json.JsonSerializer.Serialize<MainViewModel>(viewModel, new System.Text.Json.JsonSerializerOptions()
+                {
+                    AllowTrailingCommas = false,
+                    WriteIndented = true
+                });
+                var configuration = Path.Combine(Environment.CurrentDirectory, CONFIG_FILE);
+
+                File.WriteAllText(configuration, json);
+            }
+            catch (Exception ex)
+            {
+                // TODO: LOG
+            }
         }
 
         private void OnPlaySyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)

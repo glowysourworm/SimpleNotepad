@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json.Serialization;
 using System.Windows.Forms;
 
 using SimpleWpf.Extensions;
@@ -19,16 +20,20 @@ namespace SimpleNotepad.ViewModel
         SimpleCommand _openCommand;
         SimpleCommand _saveCommand;
         SimpleCommand _saveAsCommand;
+        SimpleCommand _saveTemplatesCommand;
         SimpleCommand _closeCommand;
 
         SimpleCommand _playCommand;
         SimpleCommand _playRestCommand;
+
 
         public ObservableCollection<DockingManagerItemViewModel> DockingManagerItemsSource
         {
             get { return _dockingManagerItemsSource; }
             set { this.RaiseAndSetIfChanged(ref _dockingManagerItemsSource, value); }
         }
+
+        [JsonIgnore]
         public ObservableCollection<SyntaxTemplateViewModel> SyntaxTemplates
         {
             get
@@ -38,38 +43,52 @@ namespace SimpleNotepad.ViewModel
             }
         }
 
+        [JsonIgnore]
         public SimpleCommand PlayCommand
         {
             get { return _playCommand; }
             set { this.RaiseAndSetIfChanged(ref _playCommand, value); }
         }
+
+        [JsonIgnore]
         public SimpleCommand PlayRestCommand
         {
             get { return _playRestCommand; }
             set { this.RaiseAndSetIfChanged(ref _playRestCommand, value); }
         }
 
+        [JsonIgnore]
         public SimpleCommand OpenCommand
         {
             get { return _openCommand; }
             set { this.RaiseAndSetIfChanged(ref _openCommand, value); }
         }
+        [JsonIgnore]
         public SimpleCommand SaveCommand
         {
             get { return _saveCommand; }
             set { this.RaiseAndSetIfChanged(ref _saveCommand, value); }
         }
+        [JsonIgnore]
         public SimpleCommand SaveAsCommand
         {
             get { return _saveAsCommand; }
             set { this.RaiseAndSetIfChanged(ref _saveAsCommand, value); }
         }
+        [JsonIgnore]
+        public SimpleCommand SaveTemplatesCommand
+        {
+            get { return _saveTemplatesCommand; }
+            set { this.RaiseAndSetIfChanged(ref _saveTemplatesCommand, value); }
+        }
+        [JsonIgnore]
         public SimpleCommand CloseCommand
         {
             get { return _closeCommand; }
             set { this.RaiseAndSetIfChanged(ref _closeCommand, value); }
         }
 
+        [JsonIgnore]
         public SyntaxTemplateViewModel SelectedSyntaxTemplate
         {
             get { return _selectedSyntaxTemplate; }
@@ -83,7 +102,7 @@ namespace SimpleNotepad.ViewModel
             //                           attached behaviors to intercept how to build the UI. Each of these will bind
             //                           to the proper view model type.
 
-            var defaultDocument = new DocumentViewModel("", true)
+            var defaultDocument = new DocumentViewModel()
             {
                 FileName = "(new file)",
                 IsDirty = true,
@@ -91,6 +110,7 @@ namespace SimpleNotepad.ViewModel
             };
             var syntaxTemplateMain = new SyntaxTemplateMainViewModel()
             {
+                Header = "Syntax Templates",
                 Templates = new ObservableCollection<SyntaxTemplateViewModel>()
                 {
                     new SyntaxTemplateViewModel()
@@ -122,8 +142,11 @@ namespace SimpleNotepad.ViewModel
                     foreach (var file in dialog.FileNames)
                     {
                         var text = File.ReadAllText(file);
-                        var newDocument = new DocumentViewModel(file, false)
+                        var newDocument = new DocumentViewModel()
                         {
+                            Header = file,
+                            FileName = file,
+                            IsDirty = false,
                             Contents = text,
                             IsSelected = true
                         };
@@ -133,15 +156,65 @@ namespace SimpleNotepad.ViewModel
                 }
             });
 
+            this.SaveCommand = new SimpleCommand(() =>
+            {
+
+            });
+
+            this.SaveAsCommand = new SimpleCommand(() =>
+            {
+
+            });
+
+            this.SaveTemplatesCommand = new SimpleCommand(() =>
+            {
+
+            });
+
             this.PlayCommand = new SimpleCommand(() =>
             {
                 var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
 
                 if (this.SelectedSyntaxTemplate != null &&
-                    currentDocument != null && 
+                    currentDocument != null &&
                     this.PlaySyntaxTemplateEvent != null)
                     this.PlaySyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
             });
+        }
+
+        public bool IsValid()
+        {
+            return this.DockingManagerItemsSource != null &&
+                   this.DockingManagerItemsSource.Count(x => x.GetType() == typeof(SyntaxTemplateMainViewModel)) == 1;
+        }
+
+        public static MainViewModel CreateDefault()
+        {
+            return new MainViewModel();
+        }
+
+        public static MainViewModel Create(IEnumerable<DockingManagerItemViewModel> items)
+        {
+            var viewModel = new MainViewModel();
+            SyntaxTemplateMainViewModel syntaxViewModel = null;
+
+            viewModel.DockingManagerItemsSource.Clear();
+
+            foreach (var item in items)
+            {
+                if (item.GetType() == typeof(SyntaxTemplateMainViewModel))
+                {
+                    if (syntaxViewModel != null)
+                        throw new Exception("Syntax templates defined more than once. Cannot create main view model");
+
+                    else
+                        syntaxViewModel = (SyntaxTemplateMainViewModel)item;
+                }
+
+                viewModel.DockingManagerItemsSource.Add(item);
+            }
+
+            return viewModel;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using SimpleWpf.Extensions;
+﻿using System.Text.Json.Serialization;
+
 using SimpleWpf.Extensions.Command;
 
 namespace SimpleNotepad.ViewModel
@@ -14,11 +15,14 @@ namespace SimpleNotepad.ViewModel
             get { return _fileName; }
             set { this.RaiseAndSetIfChanged(ref _fileName, value); }
         }
+        [JsonIgnore]
         public string Contents
         {
             get { return _contents; }
             set { this.RaiseAndSetIfChanged(ref _contents, value); }
         }
+
+        [JsonIgnore]
         public SimpleCommand CloseCommand
         {
             get { return _closeCommand; }
@@ -26,8 +30,10 @@ namespace SimpleNotepad.ViewModel
         }
 
 
-        public DocumentViewModel(string fileName, bool isNew) : base(isNew ? "New File" : fileName)
+        public DocumentViewModel()
         {
+            this.Header = "New Document";
+            this.IsDirty = true;
             this.FileName = string.Empty;
             this.Contents = string.Empty;
             this.IsSelected = false;

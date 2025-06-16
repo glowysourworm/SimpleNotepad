@@ -27,7 +27,7 @@
                 <Border>
                     <Grid VerticalAlignment="Center">
                         <TextBlock Text="Syntax Templates" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-                        <Button fa5:Awesome.Content="Solid_Plus" ToolTip="Add Template" HorizontalAlignment="Right" Padding="5" />
+                        <Button fa5:Awesome.Content="Solid_Plus" Command="{Binding AddTemplateCommand}" ToolTip="Add Template" HorizontalAlignment="Right" Padding="5" />
                     </Grid>
                 </Border>
                 
@@ -64,7 +64,7 @@
                 <ListBox ItemsSource="{Binding Parameters}" Grid.Row="1">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <view:StringPropertyView StringName="Parameter 1" StringValue="{Binding Parameter}" />
+                            <view:StringPropertyView StringName="Parameter (in order)" StringValue="{Binding Parameter}" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -73,7 +73,7 @@
         </Border>
 
         <!-- Selected Template Body -->
-        <view:DocumentView Source="{Binding TemplateBody}" 
+        <view:DocumentView Source="{Binding TemplateBody, Mode=TwoWay}" 
                            IsChanged="{Binding IsDirty, Mode=TwoWay}"
                            Grid.Row="1" Grid.ColumnSpan="1" 
                            DataContext="{Binding SelectedItem, ElementName=TemplateLB}" />
