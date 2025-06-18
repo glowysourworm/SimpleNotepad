@@ -11,6 +11,7 @@
         xmlns:viewModel="clr-namespace:SimpleNotepad.ViewModel"
         xmlns:selector="clr-namespace:SimpleNotepad.View.DataTemplateSelectors"
         xmlns:view="clr-namespace:SimpleNotepad.View"
+        Icon="/favicon.ico"
         Title="Simple Notepad" Height="700" Width="1200">
     <Window.Resources>
         <Style x:Key="ToolbarButtonStyle" TargetType="Button">
@@ -62,25 +63,43 @@
 
         <ToolBar Grid.Row="1">
             <ToolBarPanel Orientation="Horizontal" Margin="5">
-                <Button fa5:Awesome.Content="Solid_Circle" Style="{StaticResource ToolbarButtonStyle}" />
-                <Button fa5:Awesome.Content="Solid_Stop" Style="{StaticResource ToolbarButtonStyle}" />
+                <Button fa5:Awesome.Content="Solid_Circle"
+                        IsEnabled="{Binding IsRecording, Converter={StaticResource BoolInverseConverter}}"
+                        Style="{StaticResource ToolbarButtonStyle}" />
+                <Button fa5:Awesome.Content="Solid_Stop" 
+                        IsEnabled="{Binding IsRecording}"
+                        Style="{StaticResource ToolbarButtonStyle}" />
                 <Button fa5:Awesome.Content="Solid_Play" 
+                        IsEnabled="{Binding IsPlayable}"
                         Command="{Binding PlayCommand}"                        
                         Style="{StaticResource ToolbarButtonStyle}" 
                         ToolTip="Play Current Line" />
-                <Button fa5:Awesome.Content="Solid_FastForward" Style="{StaticResource ToolbarButtonStyle}" ToolTip="Play Until End Of File" />
+                <Button fa5:Awesome.Content="Solid_FastForward" 
+                        IsEnabled="{Binding IsPlayable}"
+                        Command="{Binding PlayRestCommand}"
+                        Style="{StaticResource ToolbarButtonStyle}" 
+                        ToolTip="Play Until End Of File" />
             </ToolBarPanel>
             <ToolBarPanel Orientation="Horizontal" Margin="5">
-                <RadioButton GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Macro</RadioButton>
-                <RadioButton GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Syntax Template</RadioButton>
+                <RadioButton IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.Macro}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Macro</RadioButton>
+                <RadioButton IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.SyntaxTemplate}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Syntax Template</RadioButton>
             </ToolBarPanel>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Active Template" Margin="5" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Path=Mode, Converter={StaticResource ParameterVisibilityCollapsedConverter}, ConverterParameter={x:Static viewModel:PlayMode.SyntaxTemplate}}">
+                <TextBlock Text="Active Syntax Template" Margin="5" VerticalAlignment="Center" />
                 <ComboBox Width="200" DisplayMemberPath="Name" 
                           SelectedValue="{Binding SelectedSyntaxTemplate}"
                           ItemsSource="{Binding SyntaxTemplates}" 
                           Margin="5" VerticalAlignment="Center" />
             </StackPanel>
+            <StackPanel Orientation="Horizontal" 
+                        Visibility="{Binding Path=Mode, Converter={StaticResource ParameterVisibilityCollapsedConverter}, ConverterParameter={x:Static viewModel:PlayMode.Macro}}">
+                <TextBlock Text="Active Macro" Margin="5" VerticalAlignment="Center" />
+                <ComboBox Width="200" DisplayMemberPath="Name" 
+                          SelectedValue="{Binding SelectedMacro}"
+                          ItemsSource="{Binding Macros}" 
+                          Margin="5" VerticalAlignment="Center" />
+            </StackPanel>            
         </ToolBar>
         
         <dock:DockingManager x:Name="DockingManager" Grid.Row="2"

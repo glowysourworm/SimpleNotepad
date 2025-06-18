@@ -9,12 +9,23 @@ using SimpleWpf.Extensions.Event;
 
 namespace SimpleNotepad.ViewModel
 {
+    public enum PlayMode
+    {
+        SyntaxTemplate,
+        Macro
+    }
+
     public class MainViewModel : ViewModelBase
     {
+        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> RecordMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> StopMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel, SyntaxTemplateViewModel> PlayRestSyntaxTemplateEvent;
         public event SimpleEventHandler<DocumentViewModel, SyntaxTemplateViewModel> PlaySyntaxTemplateEvent;
 
         ObservableCollection<DockingManagerItemViewModel> _dockingManagerItemsSource;
+        ObservableCollection<MacroViewModel> _macros;
 
+        MacroViewModel _selectedMacro;
         SyntaxTemplateViewModel _selectedSyntaxTemplate;
 
         SimpleCommand _openCommand;
@@ -23,14 +34,42 @@ namespace SimpleNotepad.ViewModel
         SimpleCommand _saveTemplatesCommand;
         SimpleCommand _closeCommand;
 
+        SimpleCommand _recordCommand;
+        SimpleCommand _stopCommand;
         SimpleCommand _playCommand;
         SimpleCommand _playRestCommand;
 
+        PlayMode _mode;
+        bool _isRecording;
+        bool _isPlayable;
 
         public ObservableCollection<DockingManagerItemViewModel> DockingManagerItemsSource
         {
             get { return _dockingManagerItemsSource; }
             set { this.RaiseAndSetIfChanged(ref _dockingManagerItemsSource, value); }
+        }
+        public ObservableCollection<MacroViewModel> Macros
+        {
+            get { return _macros; }
+            set { this.RaiseAndSetIfChanged(ref _macros, value); }
+        }
+        public PlayMode Mode
+        {
+            get { return _mode; }
+            set { this.RaiseAndSetIfChanged(ref _mode, value); }
+        }
+
+        [JsonIgnore]
+        public bool IsRecording
+        {
+            get { return _isRecording; }
+            set { this.RaiseAndSetIfChanged(ref _isRecording, value); }
+        }
+        [JsonIgnore]
+        public bool IsPlayable
+        {
+            get { return _isPlayable; }
+            set { this.RaiseAndSetIfChanged(ref _isPlayable, value); }
         }
 
         [JsonIgnore]
@@ -44,12 +83,23 @@ namespace SimpleNotepad.ViewModel
         }
 
         [JsonIgnore]
+        public SimpleCommand RecordCommand
+        {
+            get { return _recordCommand; }
+            set { this.RaiseAndSetIfChanged(ref _recordCommand, value); }
+        }
+        [JsonIgnore]
+        public SimpleCommand StopCommand
+        {
+            get { return _stopCommand; }
+            set { this.RaiseAndSetIfChanged(ref _stopCommand, value); }
+        }
+        [JsonIgnore]
         public SimpleCommand PlayCommand
         {
             get { return _playCommand; }
             set { this.RaiseAndSetIfChanged(ref _playCommand, value); }
         }
-
         [JsonIgnore]
         public SimpleCommand PlayRestCommand
         {
@@ -94,6 +144,12 @@ namespace SimpleNotepad.ViewModel
             get { return _selectedSyntaxTemplate; }
             set { this.RaiseAndSetIfChanged(ref _selectedSyntaxTemplate, value); }
         }
+        [JsonIgnore]
+        public MacroViewModel SelectedMacro
+        {
+            get { return _selectedMacro; }
+            set { this.RaiseAndSetIfChanged(ref _selectedMacro, value); }
+        }
 
         public MainViewModel()
         {
@@ -104,6 +160,7 @@ namespace SimpleNotepad.ViewModel
 
             var defaultDocument = new DocumentViewModel()
             {
+                Header = "New Document",
                 FileName = "(new file)",
                 IsDirty = true,
                 Contents = "Document Contents"
@@ -132,6 +189,10 @@ namespace SimpleNotepad.ViewModel
             {
                 defaultDocument, syntaxTemplateMain
             };
+            this.Mode = PlayMode.Macro;
+            this.IsRecording = false;
+            this.IsPlayable = false;
+            this.Macros = new ObservableCollection<MacroViewModel>();
 
             this.OpenCommand = new SimpleCommand(() =>
             {
@@ -171,6 +232,26 @@ namespace SimpleNotepad.ViewModel
 
             });
 
+            this.RecordCommand = new SimpleCommand(() =>
+            {
+                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+                if (currentDocument != null &&
+                    this.RecordMacroEvent != null &&
+                    this.SelectedMacro != null)
+                    this.RecordMacroEvent(currentDocument, this.SelectedMacro);
+            });
+
+            this.StopCommand = new SimpleCommand(() =>
+            {
+                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+                if (currentDocument != null &&
+                    this.StopMacroEvent != null &&
+                    this.SelectedMacro != null)
+                    this.StopMacroEvent(currentDocument, this.SelectedMacro);
+            });
+
             this.PlayCommand = new SimpleCommand(() =>
             {
                 var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
@@ -179,6 +260,16 @@ namespace SimpleNotepad.ViewModel
                     currentDocument != null &&
                     this.PlaySyntaxTemplateEvent != null)
                     this.PlaySyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
+            });
+
+            this.PlayRestCommand = new SimpleCommand(() =>
+            {
+                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+                if (this.SelectedSyntaxTemplate != null &&
+                    currentDocument != null &&
+                    this.PlayRestSyntaxTemplateEvent != null)
+                    this.PlayRestSyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
             });
         }
 
