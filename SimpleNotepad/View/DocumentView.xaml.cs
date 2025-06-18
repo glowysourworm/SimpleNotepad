@@ -1,10 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 
 using AvalonDock.Controls;
 
+using SimpleNotepad.View.AvalonEditExtension;
 using SimpleNotepad.ViewModel;
 
 namespace SimpleNotepad.View
@@ -35,6 +38,11 @@ namespace SimpleNotepad.View
             InitializeComponent();
 
             this.Editor.SyntaxHighlighting = HL.Manager.ThemedHighlightingManager.Instance.GetDefinition("C#");
+            this.Editor
+                .TextArea
+                .TextView
+                .BackgroundRenderers
+                .Add(new HighlightCurrentLineBackgroundRenderer(this.Editor, System.Windows.Media.Color.FromArgb(20, 0, 100, 250)));
 
             this.DataContextChanged += DocumentView_DataContextChanged;
         }

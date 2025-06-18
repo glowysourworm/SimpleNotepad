@@ -5,7 +5,7 @@
     <Grid>
         <avalon:TextEditor x:Name="Editor"
                            TextChanged="Editor_TextChanged"
-                           Grid.Row="1"                           
+                           Grid.Row="1"          
                            BorderThickness="1"
                            WordWrap="True"
                            ShowLineNumbers="True"

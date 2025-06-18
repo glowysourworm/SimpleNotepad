@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Shapes;
 
 using EMA.ExtendedWPFVisualTreeHelper;
@@ -10,6 +11,8 @@ using SimpleNotepad.View;
 using SimpleNotepad.ViewModel;
 
 using SimpleWpf.Extensions.Collection;
+
+using static System.Windows.Forms.LinkLabel;
 
 namespace SimpleNotepad
 {
@@ -41,7 +44,10 @@ namespace SimpleNotepad
                    !viewModel.IsValid())
                     viewModel = MainViewModel.CreateDefault();
 
+                viewModel.StopMacroEvent += OnStopMacroEvent;
+                viewModel.RecordMacroEvent += OnRecordMacroEvent;
                 viewModel.PlaySyntaxTemplateEvent += OnPlaySyntaxTemplateEvent;
+                viewModel.PlayRestSyntaxTemplateEvent += OnPlayRestSyntaxTemplateEvent;
 
                 this.DataContext = viewModel;
             }
@@ -74,7 +80,45 @@ namespace SimpleNotepad
             }
         }
 
+        private void OnRecordMacroEvent(DocumentViewModel item1, MacroViewModel item2)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnStopMacroEvent(DocumentViewModel item1, MacroViewModel item2)
+        {
+            throw new NotImplementedException();
+        }
+
         private void OnPlaySyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)
+        {
+            var view = this.DockingManager
+                           .FindAllChildren<DocumentView>()
+                           .FirstOrDefault(x => x.DataContext == sender);
+
+            if (view != null)
+            {
+                // Start BeginUpdate (holds binding / undo updates until we're finished)
+                view.Editor.Document.BeginUpdate();
+
+                // Get current line from the caret offset
+                var currentLine = view.Editor.Document.GetLineByOffset(view.Editor.CaretOffset);
+
+                // Get line of text
+                var text = view.Editor.Document.GetText(currentLine.Offset, currentLine.Length);
+
+                // Process line substitution
+                var outputText = SubstituteCurrentLine(text, template);
+
+                // Replace current line text
+                view.Editor.Document.Replace(currentLine.Offset, currentLine.Length, outputText);
+
+                // End Update -> Apply Bindings / Undo
+                view.Editor.Document.EndUpdate();
+            }
+        }
+
+        private void OnPlayRestSyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)
         {
             var view = this.DockingManager
                            .FindAllChildren<DocumentView>()
@@ -92,33 +136,10 @@ namespace SimpleNotepad
                     // Get line of text
                     var text = view.Editor.Document.GetText(line.Offset, line.Length);
 
-                    // Split the current line of text and use as input parameters of the template
-                    var parameterInputs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    // Process line substitution
+                    var outputText = SubstituteCurrentLine(text, template);
 
-                    // TODO: Notify user that parameters don't match
-                    if (parameterInputs.Length != template.Parameters.Count)
-                    {
-                        changes.Add(text);
-                        continue;
-                    }
-                        
-
-                    var outputText = text;
-
-                    // Replace each parameter instance
-                    for (int index = 0; index < template.Parameters.Count; index++)
-                    {
-                        // Parameter name (by index)
-                        var parameterName = template.Parameters[index].Parameter;
-
-                        // Run Parameter
-                        if (index == 0)
-                            outputText = template.TemplateBody.Replace("{" + parameterName + "}", parameterInputs[index]);
-
-                        else
-                            outputText = outputText.Replace("{" + parameterName + "}", parameterInputs[index]);
-                    }
-
+                    // Keep changes (these may be multi-line)
                     changes.Add(outputText);
                 }
 
@@ -127,6 +148,36 @@ namespace SimpleNotepad
                 // End Update -> Apply Bindings / Undo
                 view.Editor.Document.EndUpdate();
             }
+        }
+
+        private string SubstituteCurrentLine(string text, SyntaxTemplateViewModel template)
+        {
+            // Split the current line of text and use as input parameters of the template
+            var parameterInputs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            // TODO: Notify user that parameters don't match
+            if (parameterInputs.Length != template.Parameters.Count)
+            {
+                return text;
+            }
+
+            var outputText = text;
+
+            // Replace each parameter instance
+            for (int index = 0; index < template.Parameters.Count; index++)
+            {
+                // Parameter name (by index)
+                var parameterName = template.Parameters[index].Parameter;
+
+                // Run Parameter
+                if (index == 0)
+                    outputText = template.TemplateBody.Replace("{" + parameterName + "}", parameterInputs[index]);
+
+                else
+                    outputText = outputText.Replace("{" + parameterName + "}", parameterInputs[index]);
+            }
+
+            return outputText;
         }
     }
 }
