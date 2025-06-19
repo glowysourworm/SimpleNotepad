@@ -13,35 +13,6 @@
         xmlns:view="clr-namespace:SimpleNotepad.View"
         Icon="/favicon.ico"
         Title="Simple Notepad" Height="700" Width="1200">
-    <Window.Resources>
-        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="5" />
-            <Setter Property="FontSize" Value="14" />
-        </Style>
-        <Style x:Key="ToolbarRadioButtonStyle" TargetType="RadioButton">
-            <Setter Property="Padding" Value="5" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter />
-                        </Border>
-
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#3F00CCFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                        
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>        
-    </Window.Resources>
     <Grid>
 
         <Grid.RowDefinitions>
@@ -63,26 +34,46 @@
 
         <ToolBar Grid.Row="1">
             <ToolBarPanel Orientation="Horizontal" Margin="5">
+                
                 <Button fa5:Awesome.Content="Solid_Circle"
-                        IsEnabled="{Binding IsRecording, Converter={StaticResource BoolInverseConverter}}"
-                        Style="{StaticResource ToolbarButtonStyle}" />
+                        Command="{Binding RecordCommand}"
+                        Style="{StaticResource ToolbarRecordingButtonStyle}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource BoolANDMultiConverter}">
+                            <Binding Path="IsRecording" Converter="{StaticResource BoolInverseConverter}" />
+                            <Binding Path="Mode" Converter="{StaticResource ParameterEqualityBoolConverter}" ConverterParameter="{x:Static viewModel:PlayMode.Macro}" />
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                
                 <Button fa5:Awesome.Content="Solid_Stop" 
-                        IsEnabled="{Binding IsRecording}"
-                        Style="{StaticResource ToolbarButtonStyle}" />
+                        Command="{Binding StopCommand}"
+                        Style="{StaticResource ToolbarButtonStyle}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource BoolANDMultiConverter}">
+                            <Binding Path="IsRecording" />
+                            <Binding Path="Mode" Converter="{StaticResource ParameterEqualityBoolConverter}" ConverterParameter="{x:Static viewModel:PlayMode.Macro}" />
+                        </MultiBinding>
+                    </Button.IsEnabled>                    
+                </Button>
+                
                 <Button fa5:Awesome.Content="Solid_Play" 
                         IsEnabled="{Binding IsPlayable}"
                         Command="{Binding PlayCommand}"                        
                         Style="{StaticResource ToolbarButtonStyle}" 
                         ToolTip="Play Current Line" />
+                
                 <Button fa5:Awesome.Content="Solid_FastForward" 
                         IsEnabled="{Binding IsPlayable}"
                         Command="{Binding PlayRestCommand}"
                         Style="{StaticResource ToolbarButtonStyle}" 
                         ToolTip="Play Until End Of File" />
+                
             </ToolBarPanel>
             <ToolBarPanel Orientation="Horizontal" Margin="5">
-                <RadioButton IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.Macro}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Macro</RadioButton>
-                <RadioButton IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.SyntaxTemplate}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Syntax Template</RadioButton>
+                <RadioButton Foreground="#DF000000" IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.Macro}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Macro</RadioButton>
+                <RadioButton Foreground="#DF000000" IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.SyntaxTemplate}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Syntax Template</RadioButton>
+                <RadioButton Foreground="#DF000000" IsChecked="{Binding Path=Mode, Converter={StaticResource ParameterEqualityBoolConverter}, ConverterParameter={x:Static viewModel:PlayMode.Script}}" GroupName="MacroMode" Style="{StaticResource ToolbarRadioButtonStyle}">Script</RadioButton>
             </ToolBarPanel>
             <StackPanel Orientation="Horizontal"
                         Visibility="{Binding Path=Mode, Converter={StaticResource ParameterVisibilityCollapsedConverter}, ConverterParameter={x:Static viewModel:PlayMode.SyntaxTemplate}}">
@@ -99,7 +90,34 @@
                           SelectedValue="{Binding SelectedMacro}"
                           ItemsSource="{Binding Macros}" 
                           Margin="5" VerticalAlignment="Center" />
-            </StackPanel>            
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" 
+                        Visibility="{Binding Path=Mode, Converter={StaticResource ParameterVisibilityCollapsedConverter}, ConverterParameter={x:Static viewModel:PlayMode.Script}}">
+                
+                <TextBlock Text="Active Script" Margin="5" VerticalAlignment="Center" />
+                <ComboBox Width="200" DisplayMemberPath="Name" 
+                          SelectedValue="{Binding SelectedScript}"
+                          ItemsSource="{Binding Scripts}" 
+                          Margin="5" VerticalAlignment="Center" />
+
+                <!-- Compiled (Active Method) -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding SelectedScript.IsCompiled, Converter={StaticResource BoolVisibilityCollapseConverter}}">
+                    
+                    <TextBlock Text="Active Method" Margin="5" VerticalAlignment="Center" />
+                    <ComboBox Width="200" 
+                              SelectedValue="{Binding SelectedScriptMethod}"
+                              ItemsSource="{Binding SelectedScript.PublicMethods}" 
+                              Margin="5" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Not Compiled (Compile) -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding SelectedScript.IsCompiled, Converter={StaticResource BoolInverseVisibilityCollapseConverter}}">
+                    <Button Content="Compile" Style="{StaticResource ToolbarButtonStyle}" Command="{Binding SelectedScript.CompileCommand}" Padding="5" Margin="5" />
+                </StackPanel>                
+
+            </StackPanel>
         </ToolBar>
         
         <dock:DockingManager x:Name="DockingManager" Grid.Row="2"
@@ -127,6 +145,14 @@
                         </DataTemplate>
                         
                     </selector:MainDockerDataTemplateSelector.SyntaxTemplatesMain>
+                    <selector:MainDockerDataTemplateSelector.ScriptMain>
+
+                        <!-- SyntaxTemplates = Syntax Template Main View -->
+                        <DataTemplate>
+                            <view:ScriptMainView />
+                        </DataTemplate>
+
+                    </selector:MainDockerDataTemplateSelector.ScriptMain>
                 </selector:MainDockerDataTemplateSelector>
             </dock:DockingManager.LayoutItemTemplateSelector>
 

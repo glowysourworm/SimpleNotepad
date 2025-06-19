@@ -1,7 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows.Forms;
+
+using SimpleNotepad.View.Dialog;
 
 using SimpleWpf.Extensions;
 using SimpleWpf.Extensions.Command;
@@ -12,21 +16,28 @@ namespace SimpleNotepad.ViewModel
     public enum PlayMode
     {
         SyntaxTemplate,
-        Macro
+        Macro,
+        Script
     }
 
     public class MainViewModel : ViewModelBase
     {
-        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> RecordMacroEvent;
-        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> StopMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel> RecordMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel> StopMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> PlayRestMacroEvent;
+        public event SimpleEventHandler<DocumentViewModel, MacroViewModel> PlayMacroEvent;
         public event SimpleEventHandler<DocumentViewModel, SyntaxTemplateViewModel> PlayRestSyntaxTemplateEvent;
         public event SimpleEventHandler<DocumentViewModel, SyntaxTemplateViewModel> PlaySyntaxTemplateEvent;
+        public event SimpleEventHandler<DocumentViewModel, ScriptViewModel, string> PlayScriptEvent;                // sender, script, public method name
+        public event SimpleEventHandler<DocumentViewModel, ScriptViewModel, string> PlayRestScriptEvent;
 
         ObservableCollection<DockingManagerItemViewModel> _dockingManagerItemsSource;
         ObservableCollection<MacroViewModel> _macros;
 
         MacroViewModel _selectedMacro;
         SyntaxTemplateViewModel _selectedSyntaxTemplate;
+        ScriptViewModel _selectedScript;
+        string _selectedScriptMethod;
 
         SimpleCommand _openCommand;
         SimpleCommand _saveCommand;
@@ -56,7 +67,7 @@ namespace SimpleNotepad.ViewModel
         public PlayMode Mode
         {
             get { return _mode; }
-            set { this.RaiseAndSetIfChanged(ref _mode, value); }
+            set { this.RaiseAndSetIfChanged(ref _mode, value); SetPlayableFlags(); }
         }
 
         [JsonIgnore]
@@ -79,6 +90,15 @@ namespace SimpleNotepad.ViewModel
             {
                 return (this.DockingManagerItemsSource
                              .FirstOrDefault(x => x.GetType() == typeof(SyntaxTemplateMainViewModel)) as SyntaxTemplateMainViewModel)?.Templates;
+            }
+        }
+        [JsonIgnore]
+        public ObservableCollection<ScriptViewModel> Scripts
+        {
+            get
+            {
+                return (this.DockingManagerItemsSource
+                             .FirstOrDefault(x => x.GetType() == typeof(ScriptMainViewModel)) as ScriptMainViewModel)?.Scripts;
             }
         }
 
@@ -142,14 +162,27 @@ namespace SimpleNotepad.ViewModel
         public SyntaxTemplateViewModel SelectedSyntaxTemplate
         {
             get { return _selectedSyntaxTemplate; }
-            set { this.RaiseAndSetIfChanged(ref _selectedSyntaxTemplate, value); }
+            set { this.RaiseAndSetIfChanged(ref _selectedSyntaxTemplate, value); SetPlayableFlags(); }
         }
         [JsonIgnore]
         public MacroViewModel SelectedMacro
         {
             get { return _selectedMacro; }
-            set { this.RaiseAndSetIfChanged(ref _selectedMacro, value); }
+            set { this.RaiseAndSetIfChanged(ref _selectedMacro, value); SetPlayableFlags(); }
         }
+        [JsonIgnore]
+        public ScriptViewModel SelectedScript
+        {
+            get { return _selectedScript; }
+            set { this.RaiseAndSetIfChanged(ref _selectedScript, value); SetPlayableFlags(); }
+        }
+        [JsonIgnore]
+        public string SelectedScriptMethod
+        {
+            get { return _selectedScriptMethod; }
+            set { this.RaiseAndSetIfChanged(ref _selectedScriptMethod, value); SetPlayableFlags(); }
+        }
+
 
         public MainViewModel()
         {
@@ -184,11 +217,13 @@ namespace SimpleNotepad.ViewModel
                     }
                 }
             };
+            var scriptMain = new ScriptMainViewModel();
 
-            this.DockingManagerItemsSource = new ObservableCollection<DockingManagerItemViewModel>()
-            {
-                defaultDocument, syntaxTemplateMain
-            };
+            this.DockingManagerItemsSource = new ObservableCollection<DockingManagerItemViewModel>();
+            this.DockingManagerItemsSource.Add(defaultDocument);
+            this.DockingManagerItemsSource.Add(syntaxTemplateMain);
+            this.DockingManagerItemsSource.Add(scriptMain);
+
             this.Mode = PlayMode.Macro;
             this.IsRecording = false;
             this.IsPlayable = false;
@@ -234,49 +269,176 @@ namespace SimpleNotepad.ViewModel
 
             this.RecordCommand = new SimpleCommand(() =>
             {
-                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
-
-                if (currentDocument != null &&
-                    this.RecordMacroEvent != null &&
-                    this.SelectedMacro != null)
-                    this.RecordMacroEvent(currentDocument, this.SelectedMacro);
+                ProcessRecord();
             });
 
             this.StopCommand = new SimpleCommand(() =>
             {
-                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
-
-                if (currentDocument != null &&
-                    this.StopMacroEvent != null &&
-                    this.SelectedMacro != null)
-                    this.StopMacroEvent(currentDocument, this.SelectedMacro);
+                ProcessStop();
             });
-
             this.PlayCommand = new SimpleCommand(() =>
             {
-                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
-
-                if (this.SelectedSyntaxTemplate != null &&
-                    currentDocument != null &&
-                    this.PlaySyntaxTemplateEvent != null)
-                    this.PlaySyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
+                switch (this.Mode)
+                {
+                    case PlayMode.SyntaxTemplate:
+                        ProcessPlaySyntaxTemplate();
+                        break;
+                    case PlayMode.Macro:
+                        ProcessPlayMacro();
+                        break;
+                    case PlayMode.Script:
+                        ProcessPlayScript();
+                        break;
+                    default:
+                        break;
+                }
             });
 
             this.PlayRestCommand = new SimpleCommand(() =>
             {
-                var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
-
-                if (this.SelectedSyntaxTemplate != null &&
-                    currentDocument != null &&
-                    this.PlayRestSyntaxTemplateEvent != null)
-                    this.PlayRestSyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
+                switch (this.Mode)
+                {
+                    case PlayMode.SyntaxTemplate:
+                        ProcessPlayRestSyntaxTemplate();
+                        break;
+                    case PlayMode.Macro:
+                        ProcessPlayRestMacro();
+                        break;
+                    case PlayMode.Script:
+                        ProcessPlayRestScript();
+                        break;
+                    default:
+                        break;
+                }
             });
         }
 
+        private void SetPlayableFlags()
+        {
+            this.IsPlayable = this.SelectedSyntaxTemplate != null && this.Mode == PlayMode.SyntaxTemplate ||
+                              this.SelectedMacro != null && this.Mode == PlayMode.Macro ||
+                              this.SelectedScript != null && this.SelectedScriptMethod != null && this.Mode == PlayMode.Script;
+        }
+
+        public void CancelRecording()
+        {
+            foreach (var item in this.DockingManagerItemsSource)
+            {
+                if (item is DocumentViewModel)
+                {
+                    (item as DocumentViewModel).IsRecordingKeystrokes = false;
+                    (item as DocumentViewModel).ClearMacroKeystrokes();
+                }
+            }
+            this.IsRecording = false;
+        }
         public bool IsValid()
         {
             return this.DockingManagerItemsSource != null &&
                    this.DockingManagerItemsSource.Count(x => x.GetType() == typeof(SyntaxTemplateMainViewModel)) == 1;
+        }
+
+        private void ProcessStop()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (currentDocument != null &&
+                this.StopMacroEvent != null)
+            {
+                this.StopMacroEvent(currentDocument);
+                this.IsRecording = false;
+
+                // Set view model for not-recording
+                currentDocument.IsRecordingKeystrokes = false;
+
+                var nameDialog = new NameDialog();
+                nameDialog.DialogTitle = "New Macro";
+                nameDialog.DialogLabel = "Macro Name";
+
+                if (nameDialog.ShowDialog() == true)
+                {
+                    // Get keystrokes and create macro
+                    var keyStrokes = currentDocument.GetMacroKeystrokes();
+                    var macro = new MacroViewModel()
+                    {
+                        Name = nameDialog.DialogNameResult,
+                        KeyStrokes = new ObservableCollection<MacroKeyStrokeViewModel>(keyStrokes)
+                    };
+                    this.Macros.Add(macro);
+
+                    // Clear out the macro keystroke buffer
+                    currentDocument.ClearMacroKeystrokes();
+                }
+            }
+        }
+        private void ProcessRecord()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (currentDocument != null &&
+                this.RecordMacroEvent != null)
+            {
+                this.RecordMacroEvent(currentDocument);
+                this.IsRecording = true;
+
+                // Set view model for recording
+                currentDocument.IsRecordingKeystrokes = true;
+            }
+        }
+
+        private void ProcessPlayMacro()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedMacro != null &&
+                currentDocument != null &&
+                this.PlayMacroEvent != null)
+                this.PlayMacroEvent(currentDocument, this.SelectedMacro);
+        }
+        private void ProcessPlayRestMacro()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedMacro != null &&
+                currentDocument != null &&
+                this.PlayRestMacroEvent != null)
+                this.PlayRestMacroEvent(currentDocument, this.SelectedMacro);
+        }
+        private void ProcessPlaySyntaxTemplate()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedSyntaxTemplate != null &&
+                currentDocument != null &&
+                this.PlaySyntaxTemplateEvent != null)
+                this.PlaySyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
+        }
+        private void ProcessPlayRestSyntaxTemplate()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedSyntaxTemplate != null &&
+                currentDocument != null &&
+                this.PlayRestSyntaxTemplateEvent != null)
+                this.PlayRestSyntaxTemplateEvent(currentDocument, this.SelectedSyntaxTemplate);
+        }
+        private void ProcessPlayScript()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedScript != null &&
+                currentDocument != null &&
+                this.PlayScriptEvent != null)
+                this.PlayScriptEvent(currentDocument, this.SelectedScript, this.SelectedScriptMethod);
+        }
+        private void ProcessPlayRestScript()
+        {
+            var currentDocument = this.DockingManagerItemsSource.FirstOrDefault(x => x.IsSelected) as DocumentViewModel;
+
+            if (this.SelectedScript != null &&
+                currentDocument != null &&
+                this.PlayRestScriptEvent != null)
+                this.PlayRestScriptEvent(currentDocument, this.SelectedScript, this.SelectedScriptMethod);
         }
 
         public static MainViewModel CreateDefault()

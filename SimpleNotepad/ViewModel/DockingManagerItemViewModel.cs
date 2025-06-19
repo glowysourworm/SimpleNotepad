@@ -3,8 +3,9 @@
 using SimpleWpf.Extensions;
 
 namespace SimpleNotepad.ViewModel
-{
+{    
     [JsonDerivedType(typeof(DockingManagerItemViewModel), typeDiscriminator: "base")]
+    [JsonDerivedType(typeof(ScriptMainViewModel), typeDiscriminator: "Scripts")]
     [JsonDerivedType(typeof(DocumentViewModel), typeDiscriminator: "FileName")]
     [JsonDerivedType(typeof(SyntaxTemplateMainViewModel), typeDiscriminator: "Templates")]
     public class DockingManagerItemViewModel : ViewModelBase

@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Windows;
-using System.Windows.Forms;
-using System.Windows.Shapes;
+using System.Windows.Input;
 
 using EMA.ExtendedWPFVisualTreeHelper;
 
@@ -12,7 +10,7 @@ using SimpleNotepad.ViewModel;
 
 using SimpleWpf.Extensions.Collection;
 
-using static System.Windows.Forms.LinkLabel;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SimpleNotepad
 {
@@ -23,6 +21,9 @@ namespace SimpleNotepad
         public MainWindow()
         {
             InitializeComponent();
+
+            // Manage view model on docking changed events (want access to the active "tab")
+            this.DockingManager.ActiveContentChanged += DockingManager_ActiveContentChanged;
 
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
@@ -46,8 +47,12 @@ namespace SimpleNotepad
 
                 viewModel.StopMacroEvent += OnStopMacroEvent;
                 viewModel.RecordMacroEvent += OnRecordMacroEvent;
+                viewModel.PlayMacroEvent += OnPlayMacroEvent;
+                viewModel.PlayRestMacroEvent += OnPlayRestMacroEvent;
                 viewModel.PlaySyntaxTemplateEvent += OnPlaySyntaxTemplateEvent;
                 viewModel.PlayRestSyntaxTemplateEvent += OnPlayRestSyntaxTemplateEvent;
+                viewModel.PlayScriptEvent += OnPlayScriptEvent;
+                viewModel.PlayRestScriptEvent += OnPlayRestScriptEvent;
 
                 this.DataContext = viewModel;
             }
@@ -56,7 +61,20 @@ namespace SimpleNotepad
                 // TODO: LOG
 
                 if (this.DataContext == null)
-                    this.DataContext = MainViewModel.CreateDefault();
+                {
+                    var viewModel = MainViewModel.CreateDefault();
+
+                    viewModel.StopMacroEvent += OnStopMacroEvent;
+                    viewModel.RecordMacroEvent += OnRecordMacroEvent;
+                    viewModel.PlayMacroEvent += OnPlayMacroEvent;
+                    viewModel.PlayRestMacroEvent += OnPlayRestMacroEvent;
+                    viewModel.PlaySyntaxTemplateEvent += OnPlaySyntaxTemplateEvent;
+                    viewModel.PlayRestSyntaxTemplateEvent += OnPlayRestSyntaxTemplateEvent;
+                    viewModel.PlayScriptEvent += OnPlayScriptEvent;
+                    viewModel.PlayRestScriptEvent += OnPlayRestScriptEvent;
+
+                    this.DataContext = viewModel;
+                }
             }
         }
 
@@ -80,17 +98,25 @@ namespace SimpleNotepad
             }
         }
 
-        private void OnRecordMacroEvent(DocumentViewModel item1, MacroViewModel item2)
+        private void DockingManager_ActiveContentChanged(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            // Stop Macro Recording
+            var viewModel = this.DataContext as MainViewModel;
+
+            viewModel?.CancelRecording();
         }
 
-        private void OnStopMacroEvent(DocumentViewModel item1, MacroViewModel item2)
+        private void OnRecordMacroEvent(DocumentViewModel item1)
         {
-            throw new NotImplementedException();
+            // Enter any UI changes
         }
 
-        private void OnPlaySyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)
+        private void OnStopMacroEvent(DocumentViewModel viewModel)
+        {
+            // Enter any UI changes
+        }
+
+        private void OnPlayMacroEvent(DocumentViewModel sender, MacroViewModel macro)
         {
             var view = this.DockingManager
                            .FindAllChildren<DocumentView>()
@@ -98,27 +124,66 @@ namespace SimpleNotepad
 
             if (view != null)
             {
-                // Start BeginUpdate (holds binding / undo updates until we're finished)
-                view.Editor.Document.BeginUpdate();
-
-                // Get current line from the caret offset
-                var currentLine = view.Editor.Document.GetLineByOffset(view.Editor.CaretOffset);
-
-                // Get line of text
-                var text = view.Editor.Document.GetText(currentLine.Offset, currentLine.Length);
-
-                // Process line substitution
-                var outputText = SubstituteCurrentLine(text, template);
-
-                // Replace current line text
-                view.Editor.Document.Replace(currentLine.Offset, currentLine.Length, outputText);
-
-                // End Update -> Apply Bindings / Undo
-                view.Editor.Document.EndUpdate();
+                // Times To Run:  One Time
+                foreach (var keyStroke in macro.KeyStrokes)
+                {
+                    //view.Editor.TextArea.RaiseEvent(new System.Windows.Input.KeyEventArgs(InputManager.Current.PrimaryKeyboardDevice,
+                    //                                                             PresentationSource.FromDependencyObject(view.Editor.TextArea),
+                    //                                                             (int)DateTime.UtcNow.Ticks,
+                    //                                                             keyStroke.Key)
+                    //{
+                    //    RoutedEvent = UIElement.PreviewKeyDownEvent,
+                    //    Source = view.Editor.TextArea,
+                    //    Handled = false,
+                    //});
+                }
             }
         }
 
+        private void OnPlayRestMacroEvent(DocumentViewModel sender, MacroViewModel macro)
+        {
+
+        }
+
+        private void OnPlaySyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)
+        {
+            ProcessForCurrentLine(sender, (inputText) =>
+            {
+                return SubstituteCurrentLine(inputText, template);
+            });
+        }
+
         private void OnPlayRestSyntaxTemplateEvent(DocumentViewModel sender, SyntaxTemplateViewModel template)
+        {
+            ProcessUntilEndOfFile(sender, (inputText) =>
+            {
+                return SubstituteCurrentLine(inputText, template);
+            });
+        }
+
+        private void OnPlayRestScriptEvent(DocumentViewModel sender, ScriptViewModel script, string scriptMethod)
+        {
+            ProcessUntilEndOfFile(sender, (inputText) =>
+            {
+                var errorMessage = string.Empty;
+                var outputText = script.Execute(scriptMethod, inputText, out errorMessage);
+
+                return outputText;
+            });
+        }
+
+        private void OnPlayScriptEvent(DocumentViewModel sender, ScriptViewModel script, string scriptMethod)
+        {
+            ProcessForCurrentLine(sender, (inputText) =>
+            {
+                var errorMessage = string.Empty;
+                var outputText = script.Execute(scriptMethod, inputText, out errorMessage);
+
+                return outputText;
+            });
+        }
+
+        private void ProcessUntilEndOfFile(DocumentViewModel sender, Func<string, string> lineSubstitutionCallback)
         {
             var view = this.DockingManager
                            .FindAllChildren<DocumentView>()
@@ -137,13 +202,41 @@ namespace SimpleNotepad
                     var text = view.Editor.Document.GetText(line.Offset, line.Length);
 
                     // Process line substitution
-                    var outputText = SubstituteCurrentLine(text, template);
+                    var outputText = lineSubstitutionCallback(text);
 
                     // Keep changes (these may be multi-line)
                     changes.Add(outputText);
                 }
 
                 view.Editor.Document.Text = changes.Join("\n", x => x);
+
+                // End Update -> Apply Bindings / Undo
+                view.Editor.Document.EndUpdate();
+            }
+        }
+
+        private void ProcessForCurrentLine(DocumentViewModel sender, Func<string, string> lineSubstitutionCallback)
+        {
+            var view = this.DockingManager
+                           .FindAllChildren<DocumentView>()
+                           .FirstOrDefault(x => x.DataContext == sender);
+
+            if (view != null)
+            {
+                // Start BeginUpdate (holds binding / undo updates until we're finished)
+                view.Editor.Document.BeginUpdate();
+
+                // Get current line from the caret offset
+                var currentLine = view.Editor.Document.GetLineByOffset(view.Editor.CaretOffset);
+
+                // Get line of text
+                var text = view.Editor.Document.GetText(currentLine.Offset, currentLine.Length);
+
+                // Process line substitution
+                var outputText = lineSubstitutionCallback(text);
+
+                // Replace current line text
+                view.Editor.Document.Replace(currentLine.Offset, currentLine.Length, outputText);
 
                 // End Update -> Apply Bindings / Undo
                 view.Editor.Document.EndUpdate();

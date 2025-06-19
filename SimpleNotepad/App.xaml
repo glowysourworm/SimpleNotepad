@@ -4,13 +4,19 @@
              xmlns:local="clr-namespace:SimpleNotepad"
              xmlns:converter="clr-namespace:SimpleWpf.UI.Converter;assembly=SimpleWpf.UI"
              xmlns:selectors="clr-namespace:SimpleNotepad.View.DataTemplateSelectors"
+             xmlns:validationRules="clr-namespace:SimpleNotepad.View.Dialog.ValidationRules"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <converter:CollectionNonEmptyVisibilityConverter x:Key="CollectionNonEmptyVisibilityConverter" />
+        
         <converter:BoolInverseConverter x:Key="BoolInverseConverter" />
         <converter:BoolVisibilityCollapseConverter x:Key="BoolVisibilityCollapseConverter" />
+        <converter:BoolInverseVisibilityCollapseConverter x:Key="BoolInverseVisibilityCollapseConverter" />
+        <converter:CollectionNonEmptyVisibilityConverter x:Key="CollectionNonEmptyVisibilityConverter" />
+        <converter:NullBoolConverter x:Key="NullBoolConverter" />
         <converter:ParameterEqualityBoolConverter x:Key="ParameterEqualityBoolConverter" />
         <converter:ParameterVisibilityCollapsedConverter x:Key="ParameterVisibilityCollapsedConverter" />
+
+        <converter:BoolANDMultiConverter x:Key="BoolANDMultiConverter" />
 
         <selectors:MainDockerDataTemplateSelector x:Key="MainDockerDataTemplateSelector" />
     </Application.Resources>

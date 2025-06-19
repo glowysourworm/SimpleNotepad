@@ -22,6 +22,7 @@ namespace SimpleNotepad.View.DataTemplateSelectors
 
         public DataTemplate DocumentTemplateDefault { get; set; }
         public DataTemplate SyntaxTemplatesMain { get; set; }
+        public DataTemplate ScriptMain { get; set; }
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
@@ -32,7 +33,10 @@ namespace SimpleNotepad.View.DataTemplateSelectors
             if (item is SyntaxTemplateMainViewModel)
                 return this.SyntaxTemplatesMain;
 
-            else 
+            else if (item is ScriptMainViewModel)
+                return this.ScriptMain;
+
+            else
                 return this.DocumentTemplateDefault;
         }
     }

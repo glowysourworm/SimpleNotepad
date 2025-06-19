@@ -3,12 +3,17 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 
 using AvalonDock.Controls;
 
+using ICSharpCode.AvalonEdit.Editing;
+
 using SimpleNotepad.View.AvalonEditExtension;
 using SimpleNotepad.ViewModel;
+
+using SimpleWpf.Extensions;
 
 namespace SimpleNotepad.View
 {
@@ -22,6 +27,9 @@ namespace SimpleNotepad.View
         public static readonly DependencyProperty IsChangedProperty =
             DependencyProperty.Register("IsChanged", typeof(bool), typeof(DocumentView));
 
+        public static readonly DependencyProperty IsRecordingProperty =
+            DependencyProperty.Register("IsRecording", typeof(bool), typeof(DocumentView));
+
         public string Source
         {
             get { return (string)GetValue(SourceProperty); }
@@ -31,6 +39,11 @@ namespace SimpleNotepad.View
         {
             get { return (bool)GetValue(IsChangedProperty); }
             set { SetValue(IsChangedProperty, value); }
+        }
+        public bool IsRecording
+        {
+            get { return (bool)GetValue(IsRecordingProperty); }
+            set { SetValue(IsRecordingProperty, value); }
         }
 
         public DocumentView()
@@ -52,7 +65,9 @@ namespace SimpleNotepad.View
             var viewModel = e.NewValue as DocumentViewModel;
 
             if (viewModel != null)
+            {
                 this.Editor.Text = viewModel.Contents;
+            }
         }
 
         private void UpdateFromSource()
@@ -71,6 +86,7 @@ namespace SimpleNotepad.View
                 this.Source != this.Editor.Text)
             {
                 viewModel.IsDirty = true;
+                this.IsChanged = true;
 
                 // Binding could take care of this part
                 this.Source = this.Editor.Text;
@@ -78,6 +94,20 @@ namespace SimpleNotepad.View
             else
             {
                 this.Source = this.Editor.Text;
+            }
+        }
+
+        // Macro Recording -> Log Keystroke
+        private void Editor_KeyDown(object sender, KeyEventArgs e)
+        {
+            var viewModel = this.DataContext as DocumentViewModel;
+
+            if (viewModel != null &&
+                viewModel.IsRecordingKeystrokes &&
+                !e.IsRepeat)
+            {
+                if (!e.Key.IsModifier())
+                    viewModel.AddMacroKeystroke(e);
             }
         }
 

@@ -22,7 +22,6 @@ namespace SimpleNotepad.ViewModel
 
         public MacroKeyStrokeViewModel()
         {
-
         }
     }
 }
